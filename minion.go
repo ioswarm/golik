@@ -87,11 +87,11 @@ func (r *MinionReceiver) Receive(reference CloveRef, messages <-chan Message) {
 /* lifecycle proxies */
 
 func (r *MinionReceiver) PreStart(c CloveRef) {
-	callLifeCycle(c, r.minion, "PreStart")
+	CallLifeCycle(c, r.minion, "PreStart")
 }
 
 func (r *MinionReceiver) PostStart(c CloveRef) {
-	callLifeCycle(c, r.minion, "PostStart")
+	CallLifeCycle(c, r.minion, "PostStart")
 
 	// TODO if one or more routes bind ... minion clove is not stoppable or find a way to remove route from mux.Router
 	// or rebuild mux.Router and restart http-server
@@ -111,11 +111,11 @@ func (r *MinionReceiver) PostStart(c CloveRef) {
 }
 
 func (r *MinionReceiver) PreStop(c CloveRef) {
-	callLifeCycle(c, r.minion, "PreStop")
+	CallLifeCycle(c, r.minion, "PreStop")
 }
 
 func (r *MinionReceiver) PostStop(c CloveRef) {
-	callLifeCycle(c, r.minion, "PostStop")
+	CallLifeCycle(c, r.minion, "PostStop")
 }
 
 

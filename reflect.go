@@ -5,7 +5,7 @@ import (
 	ior "github.com/ioswarm/goutils/reflect"
 )
 
-func callLifeCycle(c CloveRef, minion interface{}, methodName string) {
+func CallLifeCycle(c CloveRef, minion interface{}, methodName string) {
 	if minion != nil {
 		mvalue := ior.ToPtrValue(reflect.ValueOf(minion))
 		if methodValue := mvalue.MethodByName(methodName); methodValue.IsValid() {

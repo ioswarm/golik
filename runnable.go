@@ -26,7 +26,7 @@ func await(message interface{}, channel chan<- Message, timeout time.Duration) <
 
 func defaultRunnable(c *clove) {
 	receiver := c.receiver(c)
-	callLifeCycle(c, receiver, "PreStart")
+	CallLifeCycle(c, receiver, "PreStart")
 
 	receiverChannel := make(chan Message)
 	receiver.Receive(c, receiverChannel)
@@ -43,7 +43,7 @@ func defaultRunnable(c *clove) {
 			switch payload := msg.Payload(); payload.(type) {
 			case StopCommand:
 				cmd := payload.(StopCommand)
-				callLifeCycle(c, receiver, "PreStop")
+				CallLifeCycle(c, receiver, "PreStop")
 				
 				for _, child := range c.Children() {
 					// TODO handle result and remove ref from children
@@ -73,7 +73,7 @@ func defaultRunnable(c *clove) {
 					c.Parent().Tell(ChildStopped(c))
 				}
 				c.parent = nil
-				callLifeCycle(c, receiver, "PostStop")
+				CallLifeCycle(c, receiver, "PostStop")
 
 				msg.Reply(Stopped())
 				return
@@ -89,5 +89,5 @@ func defaultRunnable(c *clove) {
 		}
 	}()
 
-	callLifeCycle(c, receiver, "PostStart")
+	CallLifeCycle(c, receiver, "PostStart")
 }
