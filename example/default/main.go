@@ -64,15 +64,15 @@ func (t *TestM) HandleIntCloveRoute() golik.CloveRoute {
 func main() {
 	system := golik.GolikSystem()
 
-	ref := system.Of(golik.Minion(func() interface{} { return &TestM{} }), "testA")
+	
+	ref := system.Of(golik.CloveDefinition{
+		Name: "TestA",
+		Receiver: golik.Minion(&TestM{}),
+	})
 
 	ref.Tell("Hallo Welt")
 	
 	fmt.Printf("Result for int %v = %v\n", 155, <- ref.Ask(155, time.Second))
-
-	//ref.Tell(golik.Stop())
-
-	time.Sleep(1 * time.Second)
 
 	<-system.Terminated()
 }

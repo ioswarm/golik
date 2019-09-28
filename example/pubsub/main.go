@@ -41,8 +41,15 @@ func (r* Receiver)Receive(s string, c golik.CloveRef) {
 func main() {
 	system := golik.GolikSystem()
 
-	system.Of(golik.Minion(func() interface{} { return &Ticker{} } ), "ticker")
-	system.Of(golik.Minion(func() interface{} { return &Receiver{} }), "receiver")
+	system.Of(golik.CloveDefinition{
+		Name: "ticker",
+		Receiver: golik.Minion(&Ticker{}),
+	})
+	
+	system.Of(golik.CloveDefinition{
+		Name: "receiver",
+		Receiver: golik.Minion(&Receiver{}),
+	})
 
 	<- system.Terminated()
 }

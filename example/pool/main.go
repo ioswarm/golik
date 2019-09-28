@@ -23,7 +23,10 @@ func NewWorker() interface{} {
 func main() {
 	system := golik.GolikSystem()
 
-	ref := system.Of(golik.WorkerPool(10, golik.Minion(NewWorker)), "pool")
+	ref := system.Of(golik.WorkerPool(10, golik.CloveDefinition {
+		Name: "worker",
+		Receiver: golik.Minion(&Worker{}),
+	}))
 
 	for i := 0; i < 100; i++ {
 		//time.Sleep(250 * time.Millisecond)
