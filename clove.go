@@ -1,11 +1,14 @@
 package golik
 
 import (
+	"fmt"
 	"time"
 	"strings"
 )
 
+/*
 type Producer func(CloveRef, string) CloveRef
+*/
 
 type CloveReceiver interface {
 	Receive(reference CloveRef, messages <-chan Message)
@@ -43,6 +46,13 @@ type CloveRef interface {
 	Ticker(duration time.Duration, message interface{}) *time.Ticker
 }
 
+type CloveDefinition struct {
+	Name string
+	MessageSize int
+	Receiver func(CloveContext) CloveReceiver
+	LogParams map[string]interface{}
+}
+
 type clove struct {
 	// TODO implement state
 	system Golik
@@ -63,14 +73,61 @@ func (c *clove) run() {
 
 /* internal implementation */
 
-
-
 /* GolikContext implementation */
 
+/*
 func (c *clove) Of(producer Producer, name string) CloveRef {
 	// TODO validate name and return error
 	if ref, ok := c.Child(name); !ok{
 		ref = producer(c, name)
+		c.appendChild(ref)
+		// TODO check Client state
+		return ref
+	} else {
+		c.Debug("Clove %v already exists", name)
+		return ref // TODO maybe return error???
+	}
+}
+*/
+
+func (c *clove) Of(definition CloveDefinition) CloveRef {
+	name := fmt.Sprintf("clove_%v", len(c.children))
+	if len(definition.Name) > 0 {
+		name = definition.Name
+	}
+
+	msgSize := 1000
+	if definition.MessageSize > 0 {
+		msgSize = definition.MessageSize
+	}
+
+	logParams := make(map[string]interface{})
+	if definition.LogParams != nil {
+		logParams = definition.LogParams
+	}
+
+	createClove := func () *clove {
+		child := &clove{
+			system: c.System(),
+			parent: c,
+			name: name, 
+			children: make([]CloveRef, 0),
+			messages: make(chan Message, msgSize),
+			receiver: definition.Receiver,
+			runnable: defaultRunnable,
+		}
+
+		logParams["name"] = name
+		logParams["path"] = c.Path()
+		child.log = newLogrusLogger(logParams)
+
+		child.run()
+
+		return child
+	}
+
+	if ref, ok := c.Child(name); !ok{
+		ref = createClove()
 		c.appendChild(ref)
 		// TODO check Client state
 		return ref

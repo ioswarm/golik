@@ -14,7 +14,6 @@ func core(system *golik) *clove {
 		messages: make(chan Message, 1000), // TODO buffer-size from settings
 		receiver: func(context CloveContext) CloveReceiver{
 			return &MinionReceiver{
-				context: context,
 				minion: &coreMinion{},
 			}
 		},
@@ -37,8 +36,8 @@ type coreMinion struct{
 }
 
 func (cm *coreMinion) PostStart(c CloveRef) {
-	cm.httpRef = c.Of(Http(), "http")
-	cm.pubsub = c.Of(pubsub(), "pubsub")
+	cm.httpRef = c.Of(Http("http"))
+	cm.pubsub = c.Of(pubsub())
 	
 	c.Info("core-system started")
 }

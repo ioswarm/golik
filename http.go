@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+/*
 func Http() Producer {
 	return func(parent CloveRef, name string) CloveRef {
 		settings := newBaseSettings()
@@ -31,7 +32,7 @@ func Http() Producer {
 					},
 				}
 			},
-			runnable: defaultRunnable,
+			runnable: DefaultRunnable,
 		}
 
 		c.log = newLogrusLogger(map[string]interface{}{
@@ -44,6 +45,32 @@ func Http() Producer {
 		c.run()
 
 		return c
+	}
+}
+*/
+
+func Http(name string) CloveDefinition {
+	settings := newBaseSettings()
+	if name != "http" {
+		settings = newSettings(name)
+	}
+
+	return CloveDefinition{
+		Name: name,
+		LogParams: map[string]interface{}{
+			"host": settings.Host,
+			"port": settings.Port,
+		},
+		Receiver: func(context CloveContext) CloveReceiver {
+			return &MinionReceiver{
+				minion: &HttpService{
+					name: name,
+					settings: settings,
+					router: mux.NewRouter(),
+					//routes: make([]*Route, 0),
+				},
+			}
+		},
 	}
 }
 

@@ -8,7 +8,8 @@ import (
 
 type GolikContext interface {
 	Loggable
-	Of(producer Producer, name string) CloveRef
+	// Of(producer Producer, name string) CloveRef
+	Of(definition CloveDefinition) CloveRef
 	At(path string) (CloveRef, bool)
 
 	Publish(msg interface{})
@@ -44,8 +45,14 @@ type golik struct {
 	log Loggable
 }
 
+/*
 func (g *golik) Of(producer Producer, name string) CloveRef {
 	return g.core.Of(producer, name)
+}
+*/
+
+func (g *golik) Of(definition CloveDefinition) CloveRef {
+	return g.core.Of(definition)
 }
 
 func (g *golik) At(path string) (CloveRef, bool) {

@@ -2,10 +2,10 @@ package golik
 
 import (
 	"fmt"
-	"strconv"
 	"sort"
 )
 
+/*
 func WorkerPool(size int, worker Producer) Producer {
 	return func(parent CloveRef, name string) CloveRef {
 		c := &clove{
@@ -19,7 +19,7 @@ func WorkerPool(size int, worker Producer) Producer {
 					context: context,
 				}
 			},
-			runnable: defaultRunnable,
+			runnable: DefaultRunnable,
 		}
 
 		sz := size
@@ -42,9 +42,42 @@ func WorkerPool(size int, worker Producer) Producer {
 		return c
 	}
 }
+*/
+
+func WorkerPool(size int, worker CloveDefinition) CloveDefinition {
+	wsize := 1
+	if size > wsize {
+		wsize = size
+	}
+
+	defs := make([]CloveDefinition, wsize)
+	for i := 0; i<wsize; i++ {
+
+		defs[i] = CloveDefinition{
+			Name: fmt.Sprintf("%v_%v", worker.Name, i),
+			Receiver: worker.Receiver,
+			LogParams: worker.LogParams,
+			MessageSize: worker.MessageSize,
+		}
+	}
+
+	return CloveDefinition {
+		Name: worker.Name,
+		LogParams: map[string]interface{}{
+			"pool-size": wsize,
+		},
+		Receiver: func(context CloveContext) CloveReceiver {
+			return &WorkerPipeReceiver{
+				context: context,
+				definitions: defs,
+			}
+		},
+	}
+}
 
 type WorkerPipeReceiver struct {
 	context CloveContext
+	definitions []CloveDefinition
 }
 
 type chanSize struct {
@@ -81,4 +114,11 @@ func (r *WorkerPipeReceiver) Receive(reference CloveRef, messages <-chan Message
 			sizes[0].channel <- msg
 		}
 	}()
+}
+
+func (r *WorkerPipeReceiver) PostStart(reference CloveRef) {
+	for i, def := range r.definitions {
+		reference.Debug("Start worker[%v] %v", i, def.Name)
+		reference.Of(def)
+	}
 }

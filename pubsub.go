@@ -5,6 +5,7 @@ type Subscription struct {
 	Filter func(msg interface{}) bool
 }
 
+/*
 func pubsub() Producer {
 	return func(parent CloveRef, name string) CloveRef {
 		c := &clove{
@@ -19,7 +20,7 @@ func pubsub() Producer {
 					subscriptions: make([]Subscription, 0),
 				}
 			},
-			runnable: defaultRunnable,
+			runnable: DefaultRunnable,
 		}
 
 		c.log = newLogrusLogger(map[string]interface{}{
@@ -30,6 +31,18 @@ func pubsub() Producer {
 		c.run()
 
 		return c
+	}
+}*/
+
+func pubsub() CloveDefinition {
+	return CloveDefinition{
+		Name: "pubsub",
+		Receiver: func(context CloveContext) CloveReceiver {
+			return &PubSubReceiver{
+				context: context,
+				subscriptions: make([]Subscription, 0),
+			}
+		},
 	}
 }
 
