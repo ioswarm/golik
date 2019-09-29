@@ -118,7 +118,7 @@ func (c *clove) Of(definition CloveDefinition) CloveRef {
 		}
 
 		logParams["name"] = name
-		logParams["path"] = c.Path()
+		logParams["path"] = child.Path()
 		child.log = newLogrusLogger(logParams)
 
 		child.run()
