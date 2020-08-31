@@ -31,6 +31,7 @@ type Route struct {
 	Path string
 	Method string
 	Handle interface{}
+	Subroutes []Route
 }
 
 type Response struct {

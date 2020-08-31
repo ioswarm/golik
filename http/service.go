@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	ht "net/http"
 	"time"
 
@@ -85,6 +86,14 @@ func (hs *HttpService) shutdown(ctx golik.CloveContext) error {
 }
 
 func (hs *HttpService) Handle(route golik.Route) error {
+	return hs.handleRoute(hs.Router, route)
+}
+
+
+func (hs *HttpService) handleRoute(mrouter *mux.Router, route golik.Route) error {
+	if route.Handle == nil && len(route.Subroutes) == 0 {
+		return fmt.Errorf("Handle-Func and Subroutes are empty for %v", route.Path)
+	}
 	if err := validateRouteFunc(route.Handle); err != nil {
 		return err
 	}
@@ -93,8 +102,8 @@ func (hs *HttpService) Handle(route golik.Route) error {
 	if route.Method != "" {
 		method = route.Method
 	}
-
-	hs.Router.HandleFunc(route.Path, func(w ht.ResponseWriter, r *ht.Request) {
+	
+	r := mrouter.NewRoute().Path(route.Path).Methods(method).HandlerFunc(func(w ht.ResponseWriter, r *ht.Request) {
 		ctx := &httpRouteContext{
 			system: hs.system,
 			log: hs.log.WithFields(logrus.Fields{
@@ -129,9 +138,16 @@ func (hs *HttpService) Handle(route golik.Route) error {
 				}
 			}
 		}
-	}).Methods(method)
+	})
+
+	if len(route.Subroutes) > 0 {
+		srouter := r.Subrouter()
+		for _, sr := range route.Subroutes {
+			if err := hs.handleRoute(srouter, sr); err != nil {
+				return err
+			}
+		}
+	}
 
 	return nil
 }
-
-
