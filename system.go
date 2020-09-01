@@ -3,6 +3,7 @@ package golik
 import (
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -18,6 +19,9 @@ type Golik interface {
 	Terminated() <- chan int
 
 	ExecuteService(srv Service) error
+
+	NewTimer(duration time.Duration, f func(time time.Time)) *time.Timer
+	NewTicker(interval time.Duration, f func(time time.Time)) *time.Ticker
 }
 
 func NewSystem(name string) (Golik, error) {
@@ -76,6 +80,7 @@ type coreSystem struct {
 	core *cloveRunnable
 	srv *cloveRunnable
 	usr *cloveRunnable
+	mutex sync.Mutex
 }
 
 func (sys *coreSystem) Name() string {
@@ -166,6 +171,28 @@ func (sys *coreSystem) Panic(msg string, values ...interface{}) {
 		Values: values,
 	})
 }
+
+func (sys *coreSystem) NewTimer(duration time.Duration, f func(time time.Time)) *time.Timer {
+	t := time.NewTimer(duration)
+
+	go func() {
+		f(<- t.C)
+	}()
+
+	return t
+}
+
+func (sys *coreSystem) NewTicker(interval time.Duration, f func(time time.Time)) *time.Ticker {
+	t := time.NewTicker(interval)
+
+	go func() {
+		f(<- t.C)
+	}()
+
+	return t
+}
+
+
 
 func newCore() *Clove {
 	return &Clove{
