@@ -1,5 +1,7 @@
 package golik
 
+import "time"
+
 type HandlerFunc func(ctx CloveRunnableContext)
 
 func defaultHandler(ctx CloveRunnableContext) {
@@ -8,7 +10,21 @@ func defaultHandler(ctx CloveRunnableContext) {
 		ctx.Clove().PreStart(ctx)
 	}
 
+	timeoutFunc := func(t time.Time) {
+		ctx.Self().Tell(Timeout{})
+	}
+
+	refreshTimer := func() {
+		 if ctx.Clove().Timeout > 0 {
+			timer := ctx.System().NewTimer(ctx.Clove().Timeout, timeoutFunc)
+			ctx.SetTimer(timer)
+		}
+	}
+
+	refreshTimer()
+
 	receiveFunc := ctx.Clove().Receive(ctx)
+
 	go func() {
 		for {
 			msg, ok := <- ctx.Messages()
@@ -29,6 +45,8 @@ func defaultHandler(ctx CloveRunnableContext) {
 						ctx.Clove().PreStop(ctx)
 					}
 
+					ctx.StopTimer()
+
 					cl := make([]*CloveRef, len(ctx.Children()))
 					copy(cl, ctx.Children())
 					for _, child := range cl {
@@ -48,7 +66,14 @@ func defaultHandler(ctx CloveRunnableContext) {
 
 					return
 				}()
+			case Timeout:
+				receiveFunc(msg)
+				ctx.Stop()
 			default:
+				if ctx.Clove().RefrestTimeout {
+					refreshTimer()
+				}
+				
 				if ctx.Clove().Async {
 					go receiveFunc(msg)
 				} else {

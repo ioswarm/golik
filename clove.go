@@ -22,6 +22,8 @@ type CloveContext interface {
 	Self() *CloveRef
 	Children() []*CloveRef
 	Child(name string) (*CloveRef, bool)
+
+	Stop()
 }
 
 type CloveRunnableContext interface {
@@ -30,6 +32,8 @@ type CloveRunnableContext interface {
 	Messages() <-chan Message
 
 	RemoveChild(child *CloveRef) bool
+	SetTimer(timer *time.Timer)
+	StopTimer()
 }
 
 type ReceiveFunc func(ctx CloveContext) func(msg Message)
@@ -41,6 +45,8 @@ type Clove struct {
 	Handler    HandlerFunc
 	BufferSize uint32
 	Async      bool
+	Timeout    time.Duration
+	RefrestTimeout bool
 
 	PreStart  LifecycleFunc
 	PostStart LifecycleFunc
@@ -65,7 +71,7 @@ func EmptyClove(name string, children ...*Clove) *Clove {
 			return func(msg Message) {
 				// DO NOTHING
 			}
-		} ,
+		},
 	}
 }
 
@@ -74,7 +80,7 @@ func EmptyReceive() ReceiveFunc {
 		return func(msg Message) {
 			// DO NOTHING
 		}
-	} 
+	}
 }
 
 func (c *Clove) execute(parent *cloveRunnable, system Golik) (*cloveRunnable, error) {
@@ -103,22 +109,23 @@ func (c *Clove) execute(parent *cloveRunnable, system Golik) (*cloveRunnable, er
 	})
 
 	c.Handler(runnable)
-	
+
 	return runnable, nil
 }
 
 type cloveRunnable struct {
-	system   Golik
-	parent   *cloveRunnable
-	clove    *Clove
-	children []*cloveRunnable
-	messages chan Message
-	log      *logrus.Entry
-	mutex    sync.Mutex
+	system       Golik
+	parent       *cloveRunnable
+	clove        *Clove
+	children     []*cloveRunnable
+	messages     chan Message
+	log          *logrus.Entry
+	mutex        sync.Mutex
+	timeoutTimer *time.Timer
 }
 
 func (c *cloveRunnable) at(path string) (*cloveRunnable, bool) {
-	if (len(path) > 0) {
+	if len(path) > 0 {
 		if path[0] == '/' {
 			if len(path) == 1 {
 				return c.root(), true
@@ -132,7 +139,7 @@ func (c *cloveRunnable) at(path string) (*cloveRunnable, bool) {
 			} else {
 				return c, true
 			}
-		} else if len(path) >= 2  && path[0:2] == ".." && c.parent != nil {
+		} else if len(path) >= 2 && path[0:2] == ".." && c.parent != nil {
 			if len(path) == 2 || path == "../" {
 				return c.parent, true
 			}
@@ -182,7 +189,7 @@ func (c *cloveRunnable) root() *cloveRunnable {
 	if c.parent != nil {
 		return c.parent.root()
 	}
-	return c 
+	return c
 }
 
 func (c *cloveRunnable) Parent() (*CloveRef, bool) {
@@ -264,11 +271,35 @@ func (c *cloveRunnable) removeChildAt(index int) bool {
 	return false
 }
 
+func (c *cloveRunnable) Stop() {
+	c.Self().Tell(Stop{})
+}
+
+func (c *cloveRunnable) SetTimer(timer *time.Timer) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.timeoutTimer != nil {
+		c.timeoutTimer.Stop()
+	}
+
+	c.timeoutTimer = timer
+}
+
+func (c *cloveRunnable) StopTimer() {
+	if c.timeoutTimer != nil {
+		c.mutex.Lock()
+		defer c.mutex.Unlock()
+
+		c.timeoutTimer.Stop()
+	}
+}
+
 func (c *cloveRunnable) Run(clove *Clove) (*CloveRef, error) {
 	if clove == nil {
 		return nil, errors.New("Clove is nil")
 	}
-	
+
 	for _, child := range c.children {
 		if clove.Name == child.clove.Name {
 			return nil, fmt.Errorf("Clove '%v' already exists", clove.Name)
