@@ -1,6 +1,7 @@
 package http
 
 import (
+	"strconv"
 	"encoding/json"
 	"errors"
 	"io"
@@ -42,6 +43,35 @@ func decodeParam(inType reflect.Type, reader io.Reader) (reflect.Value, error) {
 	}
 }
 
+func handleError(err interface{}) golik.Response {
+	switch err.(type) {
+	case error:
+		return golik.Response{
+			StatusCode: ht.StatusInternalServerError,
+			Content: golik.NewError(err.(error)),
+		}
+	case *golik.Error:
+		e := err.(*golik.Error)
+		result := golik.Response{
+			StatusCode: ht.StatusInternalServerError,
+			Content: e,
+		}
+		if val, ok := e.Meta["http.status"]; ok {
+			if status, serr := strconv.Atoi(val); serr == nil {
+				result.StatusCode = status
+			}
+		}
+		return result
+	default:
+		return golik.Response{
+			StatusCode: ht.StatusInternalServerError,
+			Content: &golik.Error{
+				Message: "Unknown error occurd",
+			},
+		}
+	}
+}
+
 func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
 	fType := reflect.TypeOf(f)
 	fValue := reflect.ValueOf(f)
@@ -80,10 +110,7 @@ func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
 	if fType.NumOut() == 1 {
 		if utils.IsErrorType(fType.Out(0)) {
 			if !results[0].IsNil() {
-				return golik.Response{
-					StatusCode: ht.StatusInternalServerError,
-					Content: results[1].Interface().(error),
-				}
+				return handleError(results[0].Interface())
 			}
 		}
 		if utils.CompareType(fType.Out(0), reflect.TypeOf(golik.Response{})) {
@@ -96,10 +123,7 @@ func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
 	}
 	if fType.NumOut() == 2 {
 		if !results[1].IsNil() {
-			return golik.Response{
-				StatusCode: ht.StatusInternalServerError,
-				Content: results[1].Interface().(error),
-			}
+			return handleError(results[1].Interface())
 		}
 		if utils.CompareType(fType.Out(0), reflect.TypeOf(golik.Response{})) {
 			return results[0].Interface().(golik.Response)

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	ht "net/http"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -127,26 +126,8 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route golik.Route) error
 		w.WriteHeader(resp.StatusCode)
 
 		if resp.Content != nil {
-			enc := json.NewEncoder(w)
-			switch resp.Content.(type) {
-			case *golik.Error:
-				gerr := resp.Content.(*golik.Error)
-				if val, ok := gerr.Meta["http.status"]; ok {
-					if status, serr := strconv.Atoi(val); serr == nil {
-						w.WriteHeader(status)
-					}
-				}
-				if err := enc.Encode(gerr); err != nil {
-					ctx.Warn(err.Error())
-				}
-			case error:
-				if err := enc.Encode(golik.NewError(resp.Content.(error))); err != nil {
-					ctx.Warn(err.Error())
-				}
-			default:
-				if err := enc.Encode(resp.Content); err != nil {
-					ctx.Warn(err.Error())
-				}
+			if err := json.NewEncoder(w).Encode(resp.Content); err != nil {
+				ctx.Warn(err.Error())
 			}
 		}
 	})
