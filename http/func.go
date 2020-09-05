@@ -45,11 +45,6 @@ func decodeParam(inType reflect.Type, reader io.Reader) (reflect.Value, error) {
 
 func handleError(err interface{}) golik.Response {
 	switch err.(type) {
-	case error:
-		return golik.Response{
-			StatusCode: ht.StatusInternalServerError,
-			Content: golik.NewError(err.(error)),
-		}
 	case *golik.Error:
 		e := err.(*golik.Error)
 		result := golik.Response{
@@ -62,6 +57,11 @@ func handleError(err interface{}) golik.Response {
 			}
 		}
 		return result
+	case error:
+		return golik.Response{
+			StatusCode: ht.StatusInternalServerError,
+			Content: golik.NewError(err.(error)),
+		}
 	default:
 		return golik.Response{
 			StatusCode: ht.StatusInternalServerError,
