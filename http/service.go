@@ -98,39 +98,44 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route golik.Route) error
 	if route.Handle == nil && len(route.Subroutes) == 0 {
 		return fmt.Errorf("Handle-Func and Subroutes are empty for %v", route.Path)
 	}
-	if err := validateRouteFunc(route.Handle); err != nil {
-		return err
-	}
 
 	method := "GET"
 	if route.Method != "" {
 		method = route.Method
 	}
-	
-	r := mrouter.NewRoute().Path(route.Path).Methods(method).HandlerFunc(func(w ht.ResponseWriter, r *ht.Request) {
-		ctx := &httpRouteContext{
-			system: hs.system,
-			log: hs.log.WithFields(logrus.Fields{
-				"httpPath":   route.Path,
-				"httpMethod": route.Method,
-			}),
-			request: r,
+
+	//r := mrouter.NewRoute().Path(route.Path)
+	r := mrouter.PathPrefix(route.Path)
+	if route.Handle != nil {
+		if err := validateRouteFunc(route.Handle); err != nil {
+			return err
 		}
-
-		resp := handleRoute(ctx, route.Handle)
-
-		for key := range resp.Header {
-			w.Header().Add(key, resp.Header.Get(key))
-		}
-		w.Header().Add("Content-Type", "application/json; utf-8")
-		w.WriteHeader(resp.StatusCode)
-
-		if resp.Content != nil {
-			if err := json.NewEncoder(w).Encode(resp.Content); err != nil {
-				ctx.Warn(err.Error())
+		
+		r.Methods(method).HandlerFunc(func(w ht.ResponseWriter, r *ht.Request) {
+			ctx := &httpRouteContext{
+				system: hs.system,
+				log: hs.log.WithFields(logrus.Fields{
+					"httpPath":   route.Path,
+					"httpMethod": route.Method,
+				}),
+				request: r,
 			}
-		}
-	})
+
+			resp := handleRoute(ctx, route.Handle)
+
+			for key := range resp.Header {
+				w.Header().Add(key, resp.Header.Get(key))
+			}
+			w.Header().Add("Content-Type", "application/json; utf-8")
+			w.WriteHeader(resp.StatusCode)
+
+			if resp.Content != nil {
+				if err := json.NewEncoder(w).Encode(resp.Content); err != nil {
+					ctx.Warn(err.Error())
+				}
+			}
+		})
+	}
 
 	if len(route.Subroutes) > 0 {
 		srouter := r.Subrouter()
