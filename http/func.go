@@ -79,10 +79,11 @@ func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
 
 	if fType.NumOut() == 1 {
 		if utils.IsErrorType(fType.Out(0)) {
-			err := results[0].Interface().(error)
-			return golik.Response{
-				StatusCode: ht.StatusInternalServerError,
-				Content: err,
+			if !results[0].IsNil() {
+				return golik.Response{
+					StatusCode: ht.StatusInternalServerError,
+					Content: results[1].Interface().(error),
+				}
 			}
 		}
 		if utils.CompareType(fType.Out(0), reflect.TypeOf(golik.Response{})) {
