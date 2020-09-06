@@ -21,15 +21,22 @@ type HttpService struct {
 	Router   *mux.Router
 }
 
-func Http() *HttpService {
-	return NewHttp("http")
+func Http(system golik.Golik) (*HttpService, error) {
+	return NewHttp("http", system)
 }
 
-func NewHttp(name string) *HttpService {
-	return &HttpService{
+func NewHttp(name string, system golik.Golik) (*HttpService, error) {
+	hs := &HttpService{
 		name:   name,
+		system: system,
 		Router: mux.NewRouter(),
 	}
+
+	if err := system.ExecuteService(hs); err != nil {
+		return nil, err
+	}
+
+	return hs, nil
 }
 
 func (hs *HttpService) CreateInstance(system golik.Golik) *golik.Clove {
@@ -50,8 +57,12 @@ func (hs *HttpService) CreateInstance(system golik.Golik) *golik.Clove {
 	}
 }
 
+func (hs *HttpService) System() golik.Golik {
+	return hs.system
+}
+
 func (hs *HttpService) run(ctx golik.CloveContext) {
-	hs.system = ctx.System()
+	//hs.system = ctx.System()
 	hs.log = ctx.Logger()
 	settings := newHTTPSettings(hs.name)
 	hs.settings = settings
