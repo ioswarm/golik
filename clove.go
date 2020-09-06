@@ -409,10 +409,28 @@ func (cr *CloveRef) Ask(payload interface{}, timeout time.Duration) <-chan inter
 	return result
 }
 
+func (cr *CloveRef) AskFunc(payload interface{}, timeout time.Duration) (interface{}, error) {
+	switch result := <- cr.Ask(payload, timeout); result.(type) {
+	case error:
+		return nil, result.(error)
+	default:
+		return result, nil
+	}
+}
+
 func (cr *CloveRef) Request(payload interface{}) <-chan interface{} {
 	m := NewMessage(cr, payload)
 	cr.messages <- m
 	return m.Result()
+}
+
+func (cr *CloveRef) RequestFunc(payload interface{}) (interface{}, error) {
+	switch result := <- cr.Request(payload); payload.(type) {
+	case error: 
+		return nil, result.(error)
+	default:
+		return result, nil
+	}
 }
 
 func (cr *CloveRef) Forward(msg Message) {
