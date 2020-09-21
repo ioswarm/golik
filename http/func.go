@@ -113,8 +113,11 @@ func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
 				return handleError(results[0].Interface())
 			}
 		}
-		if utils.CompareType(fType.Out(0), reflect.TypeOf(golik.Response{})) {
+		/*if utils.CompareType(fType.Out(0), reflect.TypeOf(golik.Response{})) {
 			return results[0].Interface().(golik.Response)
+		}*/
+		if resp, ok := results[0].Interface().(golik.Response); ok {
+			return resp
 		}
 		return golik.Response{
 			StatusCode: ht.StatusOK,
@@ -125,8 +128,11 @@ func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
 		if !results[1].IsNil() {
 			return handleError(results[1].Interface())
 		}
-		if utils.CompareType(fType.Out(0), reflect.TypeOf(golik.Response{})) {
+		/*if utils.CompareType(fType.Out(0), reflect.TypeOf(golik.Response{})) {
 			return results[0].Interface().(golik.Response)
+		}*/
+		if resp, ok := results[0].Interface().(golik.Response); ok {
+			return resp
 		}
 		return golik.Response{
 			StatusCode: ht.StatusOK,
