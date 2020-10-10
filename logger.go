@@ -5,66 +5,41 @@ import (
 	"github.com/spf13/viper"
 )
 
-type LogLevel uint8
-
-const (
-	DEBUG LogLevel = iota
-	INFO
-	WARN
-	ERROR
-	PANIC
-)
-
-type LogEntry struct {
-	Level LogLevel
-	Meta map[string]interface{}
-	Message string
-	Values []interface{}
-}
-
-type Loggable interface{
-	Logger() *logrus.Entry // TODO customize Logger 
-	Log(entry LogEntry)
-	Debug(msg string, values ...interface{})  // TODO impl debug-internal?
-	Info(msg string, values ...interface{})
-	Warn(msg string, values ...interface{})
-	Error(msg string, values ...interface{})
-	Panic(msg string, values ...interface{})
-}
-
-
-func HandleLogEntry(il *logrus.Entry, e LogEntry) {
-	switch e.Level {
-	case DEBUG:
-		if len(e.Values) > 0 {
-			il.Debugf(e.Message, e.Values...)
-		} else {
-			il.Debug(e.Message)
-		}
-	case WARN:
-		if len(e.Values) > 0 {
-			il.Warnf(e.Message, e.Values...)
-		} else {
-			il.Warn(e.Message)
-		}
-	case ERROR:
-		if len(e.Values) > 0 {
-			il.Errorf(e.Message, e.Values...)
-		} else {
-			il.Error(e.Message)
-		}
-	case PANIC:
-		if len(e.Values) > 0 {
-			il.Panicf(e.Message, e.Values...)
-		} else {
-			il.Panic(e.Message)
-		}
-	default:
-		if len(e.Values) > 0 {
-			il.Infof(e.Message, e.Values...)
-		} else {
-			il.Info(e.Message)
-		}
+func NewLogger() *Clove {
+	return &Clove{
+		Name: "logger",
+		Sync: true,
+		Behavior: func (l *LogEntry) {
+			entry := l.logrusEntry()
+			switch l.LogLevel {
+			case LogLevel_DEBUG:
+				entry.Debug(l.Message)
+			case LogLevel_WARN:
+				entry.Warn(l.Message)
+			case LogLevel_ERROR:
+				entry.Warn(l.Message)
+			case LogLevel_FATAL:
+				entry.Fatal(l.Message)
+			default:
+				entry.Info(l.Message)
+			}
+		},
+		PreStart: func() {
+			initLogging()
+		}, 
+		PostStart: func(ctx CloveContext) error {
+			if err := ctx.Subscribe(func(data interface{}) bool {
+				switch data.(type) {
+				case LogEntry, *LogEntry:
+					return true
+				}
+				return false
+			}); err != nil {
+				return err
+			}
+			ctx.Info("Logging is up")
+			return nil
+		},
 	}
 }
 
@@ -100,15 +75,12 @@ func initLogging() {
 				FullTimestamp: true,
 			})
 		}
+
 		loggingInit = true
 	}
 }
 
-
 func init() {
-	
-	// logging
 	viper.SetDefault("golik.log.level", "INFO")
 	viper.SetDefault("golik.log.formatter", "text")
-
 }

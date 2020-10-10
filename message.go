@@ -1,28 +1,43 @@
 package golik
 
-type Message struct {
-	Payload interface{}
-	sender *CloveRef
+import "context"
+
+type Message interface {
+	Context() context.Context
+
+	Content() interface{}
+	Reply(interface{})
+
+	Result() <-chan interface{}
+}
+
+func newMessage(ctx context.Context, data interface{}) Message {
+	return msg{
+		context: ctx,
+		content: data,
+		reply: make(chan interface{}, 1),
+	}
+}
+
+type msg struct {
+	context context.Context
+	content interface{}
 	reply chan interface{}
-	// TODO define message-ids for monitoring and tracking
 }
 
-func (m Message) Sender() (*CloveRef, bool) {
-	return m.sender, m.sender != nil
+func (m msg) Context() context.Context {
+	return m.context
 }
 
-func (m Message) Reply(result interface{}) {
+func (m msg) Content() interface{} {
+	return m.content
+}
+
+func (m msg) Reply(result interface{}) {
 	m.reply <- result
 	close(m.reply)
 }
 
-func (m Message) Result() <- chan interface{} {
+func (m msg) Result() <-chan interface{} {
 	return m.reply
-}
-
-func NewMessage(sender *CloveRef, payload interface{}) Message {
-	return Message{
-		Payload: payload,
-		reply: make(chan interface{}, 1),
-	}
 }

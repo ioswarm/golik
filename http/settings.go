@@ -1,34 +1,33 @@
 package http
 
 import (
-	"time"
 	"fmt"
+	"time"
 
 	"github.com/spf13/viper"
 )
 
-
-
 type httpSettings struct {
-	Host         string
-	Port         int
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	IdleTimeout  time.Duration
+	Host            string
+	Port            int
+	ReadTimeout     time.Duration
+	WriteTimeout    time.Duration
+	IdleTimeout     time.Duration
+	ShutdownTimeout time.Duration
 }
 
 func (s *httpSettings) Addr() string {
 	return fmt.Sprintf("%v:%v", s.Host, s.Port)
 }
 
-
 func newBaseHTTPSettings() *httpSettings {
 	return &httpSettings{
-		Host:         viper.GetString("http.host"),
-		Port:         viper.GetInt("http.port"),
-		ReadTimeout:  time.Duration(viper.GetInt("http.readTimeout")) * time.Second,
-		WriteTimeout: time.Duration(viper.GetInt("http.writeTimeout")) * time.Second,
-		IdleTimeout:  time.Duration(viper.GetInt("http.idleTimeout")) * time.Second,
+		Host:            viper.GetString("http.host"),
+		Port:            viper.GetInt("http.port"),
+		ReadTimeout:     viper.GetDuration("http.readTimeout") * time.Second,
+		WriteTimeout:    viper.GetDuration("http.writeTimeout") * time.Second,
+		IdleTimeout:     viper.GetDuration("http.idleTimeout") * time.Second,
+		ShutdownTimeout: viper.GetDuration("http.shutdownTimeout") * time.Second,
 	}
 }
 
@@ -51,22 +50,26 @@ func newHTTPSettings(name string) *httpSettings {
 
 	path = getPath("readTimeout")
 	if viper.IsSet(path) {
-		bs.ReadTimeout = time.Duration(viper.GetInt(path)) * time.Second
+		bs.ReadTimeout = viper.GetDuration(path) * time.Second
 	}
 
 	path = getPath("writeTimeout")
 	if viper.IsSet(path) {
-		bs.WriteTimeout = time.Duration(viper.GetInt(path)) * time.Second
+		bs.WriteTimeout = viper.GetDuration(path) * time.Second
 	}
 
 	path = getPath("idleTimeout")
 	if viper.IsSet(path) {
-		bs.IdleTimeout = time.Duration(viper.GetInt(path)) * time.Second
+		bs.IdleTimeout = viper.GetDuration(path) * time.Second
+	}
+
+	path = getPath("shutdownTimeout")
+	if viper.IsSet(path) {
+		bs.ShutdownTimeout = viper.GetDuration(path) * time.Second
 	}
 
 	return bs
 }
-
 
 func init() {
 	viper.SetDefault("http.host", "")
@@ -74,4 +77,5 @@ func init() {
 	viper.SetDefault("http.readTimeout", 5)
 	viper.SetDefault("http.writeTimeout", 10)
 	viper.SetDefault("http.idleTimeout", 15)
+	viper.SetDefault("http.shutownTimeout", 10)
 }

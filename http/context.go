@@ -1,22 +1,26 @@
 package http
 
 import (
+	"context"
 	"io"
 	ht "net/http"
 
-	"github.com/ioswarm/golik"
-	"github.com/sirupsen/logrus"
 	"github.com/gorilla/mux"
+	"github.com/ioswarm/golik"
 )
 
+func newHttpRouteContext(context context.Context, handler golik.CloveHandler, request *ht.Request) *httpRouteContext {
+	return &httpRouteContext{context, handler, request}
+}
+
 type httpRouteContext struct {
-	system golik.Golik
-	log *logrus.Entry
+	context.Context
+	handler golik.CloveHandler
 	request *ht.Request
 }
 
-func (ctx *httpRouteContext) System() golik.Golik {
-	return ctx.system
+func (ctx *httpRouteContext) Handler() golik.CloveHandler {
+	return ctx.handler
 }
 
 func (ctx *httpRouteContext) Header() golik.Values {
@@ -53,50 +57,19 @@ func (ctx *httpRouteContext) Content() io.Reader {
 	return ctx.request.Body
 }
 
-func (ctx *httpRouteContext) Logger() *logrus.Entry {
-	return ctx.log
+func (ctx *httpRouteContext) Debug(msg string, values ...interface{}) {
+	ctx.handler.Debug(msg, values...)
 }
 
-func (ctx *httpRouteContext) Log(entry golik.LogEntry) {
-	golik.HandleLogEntry(ctx.log, entry)
-}
-
-func (ctx *httpRouteContext) Debug(msg string, values ...interface{}){
-	ctx.Log(golik.LogEntry{
-		Level: golik.DEBUG,
-		Message: msg,
-		Values: values,
-	})
-}
-
-func (ctx *httpRouteContext) Info(msg string, values ...interface{}){
-	ctx.Log(golik.LogEntry{
-		Level: golik.INFO,
-		Message: msg,
-		Values: values,
-	})
+func (ctx *httpRouteContext) Info(msg string, values ...interface{}) {
+	ctx.handler.Info(msg, values...)
 }
 
 func (ctx *httpRouteContext) Warn(msg string, values ...interface{}) {
-	ctx.Log(golik.LogEntry{
-		Level: golik.WARN,
-		Message: msg,
-		Values: values,
-	})
+	ctx.handler.Warn(msg, values...)
 }
 
 func (ctx *httpRouteContext) Error(msg string, values ...interface{}) {
-	ctx.Log(golik.LogEntry{
-		Level: golik.ERROR,
-		Message: msg,
-		Values: values,
-	})
+	ctx.handler.Error(msg, values...)
 }
 
-func (ctx *httpRouteContext) Panic(msg string, values ...interface{}) {
-	ctx.Log(golik.LogEntry{
-		Level: golik.PANIC,
-		Message: msg,
-		Values: values,
-	})
-}

@@ -1,34 +1,34 @@
 package golik
 
 import (
-	"strconv"
 	"sort"
+	"strconv"
 )
 
-func Pool(name string, size int, f func() *Clove) *Clove {
+func Pool(name string, size int, f func(CloveContext) *Clove) *Clove {
 	return &Clove{
 		Name: name,
-		Receive: func(ctx CloveContext) func(msg Message) {
-			return func(msg Message) {
-				children := make([]*CloveRef, len(ctx.Children()))
-				copy(children, ctx.Children())
-				sort.Slice(children, func(i, j int) bool {
-					return children[i].Length() < children[j].Length()
-				})
+		Sync: true,
+		Behavior: func(ctx CloveContext, msg Message) {
+			children := make([]CloveRef, len(ctx.Children()))
+			children = append(children, ctx.Children()...)
+			sort.Slice(children, func(i, j int) bool {
+				return children[i].Length() < children[j].Length()
+			})
 
-				if len(children) > 0 {
-					children[0].Forward(msg)
-				}
+			if len(children) > 0 {
+				children[0].Forward(msg)
 			}
 		},
-		Async: false,
-		PostStart: func(ctx CloveContext) {
+		PostStart: func(ctx CloveContext) error {
 			for i := 0; i < size; i++ {
-				c := f()
+				c := f(ctx)
 				c.Name = name + "-" + strconv.Itoa(i)
-				ctx.Debug("Create worker: %v", i)
-				ctx.Run(c)
+				if _, err := ctx.Execute(c); err != nil {
+					return err
+				}
 			}
+			return nil
 		},
 	}
 }

@@ -9,7 +9,6 @@ import (
 	"reflect"
 
 	"github.com/ioswarm/golik"
-	"github.com/ioswarm/golik/utils"
 )
 
 var (
@@ -60,7 +59,7 @@ func handleError(err interface{}) golik.Response {
 	case error:
 		return golik.Response{
 			StatusCode: ht.StatusInternalServerError,
-			Content: golik.NewError(err.(error)),
+			Content: golik.Errorln(err.(error)),
 		}
 	default:
 		return golik.Response{
@@ -78,7 +77,7 @@ func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
 
 	params := make([]reflect.Value, 0)
 	if fType.NumIn() == 1 {
-		if utils.CompareType(fType.In(0), ctxType) {
+		if golik.CompareType(fType.In(0), ctxType) {
 			params = append(params, reflect.ValueOf(ctx))
 		} else {
 			paramValue, err := decodeParam(fType.In(0), ctx.Content())
@@ -108,7 +107,7 @@ func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
 	results := fValue.Call(params)
 
 	if fType.NumOut() == 1 {
-		if utils.IsErrorType(fType.Out(0)) {
+		if golik.IsErrorType(fType.Out(0)) {
 			if !results[0].IsNil() {
 				return handleError(results[0].Interface())
 			}

@@ -1,25 +1,15 @@
 package golik
 
 import (
+	"context"
 	"io"
 )
 
-type Values map[string]string
-
-func (v Values) Add(key string, value string) {
-	v[key] = value
-}
-
-func (v Values) Get(key string) string {
-	if v == nil {
-		return ""
-	}
-	return v[key]
-}
-
 type RouteContext interface {
 	Loggable
-	System() Golik
+	context.Context
+	Handler() CloveHandler
+
 	Header() Values
 	Params() Values
 	Queries() Values
@@ -28,16 +18,16 @@ type RouteContext interface {
 }
 
 type Route struct {
-	Path string
-	Method string
-	Handle interface{}
+	Path      string
+	Method    string
+	Handle    interface{}
 	Subroutes []Route
 }
 
 type Response struct {
-	Header Values
+	Header     Values
 	StatusCode int
-	Content interface{}
+	Content    interface{}
 }
 
 type RouteHandler interface {
