@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package golik;
+
+option go_package = "github.com/ioswarm/golik";
+
+import "google/protobuf/timestamp.proto";
+
+message Error {
+    string message = 1;
+    google.protobuf.Timestamp timestamp = 2;
+    string code = 3;
+    string description = 4;
+    map<string, string> meta = 5;
+}

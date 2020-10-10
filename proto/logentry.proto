@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package golik;
+
+option go_package = "github.com/ioswarm/golik";
+
+import "google/protobuf/timestamp.proto";
+
+enum LogLevel {
+    DEBUG = 0;
+    INFO = 1;
+    WARN = 2;
+    ERROR = 3;
+    FATAL = 4;
+}
+
+message LogEntry {
+    LogLevel logLevel = 1;
+    string message = 2;
+    google.protobuf.Timestamp timestamp = 3;
+    map<string, string> meta = 4;
+}
