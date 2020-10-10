@@ -16,3 +16,5 @@
 example
 config.yaml
 go.sum
+
+*.pb.go
