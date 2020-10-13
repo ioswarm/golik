@@ -201,7 +201,7 @@ func callLifecycle(ctx CloveContext, f interface{}) error {
 	}
 }
 
-func callBehavior(ctx CloveContext, msg Message, f interface{}) {
+func CallBehavior(ctx CloveContext, msg Message, f interface{}) {
 	callBehaviorValue(ctx, msg, reflect.ValueOf(f))
 }
 
@@ -366,36 +366,36 @@ func defaultLifecycleHandler(runnable CloveRunnable) {
 				msg.Reply(Done())
 			case StopCommand:
 				//go func() {
-					if err := runnable.PreStop(); err != nil {
-						// TODO propagate error 
-					}
-					
-					cl := make([]CloveRef, len(runnable.Children()))
-					copy(cl, runnable.Children())
-					for _, child := range cl {
-						<-child.Request(context.Background(), Stop())
-						runnable.RemoveChild(child)
-					}
+				if err := runnable.PreStop(); err != nil {
+					// TODO propagate error
+				}
 
-					if err := runnable.PostStop(); err != nil {
-						// TODO propagte error
-					}
+				cl := make([]CloveRef, len(runnable.Children()))
+				copy(cl, runnable.Children())
+				for _, child := range cl {
+					<-child.Request(context.Background(), Stop())
+					runnable.RemoveChild(child)
+				}
 
-					if parent, ok := runnable.Parent(); ok {
-						parent.Send(ChildStopped(runnable.Self()))
-					}
+				if err := runnable.PostStop(); err != nil {
+					// TODO propagte error
+				}
 
-					msg.Reply(Stopped())
+				if parent, ok := runnable.Parent(); ok {
+					parent.Send(ChildStopped(runnable.Self()))
+				}
 
-					return // TODO return ends only go func not loop
+				msg.Reply(Stopped())
+
+				return // TODO return ends only go func not loop
 				//}()
 			default:
 				if runnable.Clove().Sync {
 					// fmt.Println("Execute in sync mode")
-					callBehavior(ctx, msg, runnable.Behavior())
+					CallBehavior(ctx, msg, runnable.Behavior())
 				} else {
 					// fmt.Println("Execute in async mode")
-					go callBehavior(ctx, msg, runnable.Behavior())
+					go CallBehavior(ctx, msg, runnable.Behavior())
 				}
 			}
 		}
