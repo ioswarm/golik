@@ -6,7 +6,7 @@ import (
 )
 
 type Handler interface {
-	Filter(golik.CLoveContext, filter.Filter) (filter.Result, error)
+	Filter(golik.CloveContext, filter.Filter) (filter.Result, error)
 
 	Create(golik.CloveContext, Create) error
 	Read(golik.CloveContext, Get) (interface{}, error)
