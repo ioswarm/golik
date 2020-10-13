@@ -14,6 +14,6 @@ type Handler interface {
 	// TODO Patch
 	Delete(golik.CloveContext, *Delete) (interface{}, error)
 
-	OrElse(golik.CloveContext, msg golik.Message)
+	OrElse(ctx golik.CloveContext, msg golik.Message)
 }
 
