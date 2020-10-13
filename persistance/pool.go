@@ -24,7 +24,7 @@ func NewConnectionPool(settings ConnectionPoolSettings) *Clove {
 		PreStart: settings.Connect,
 		PostStop: settings.Close,
 		Behavior: func(ctx golik.CloveContext, msg golik.Message) {
-			children := make([]*golik.CloveRef, len(ctx.Children()))
+			children := make([]golik.CloveRef, len(ctx.Children()))
 			copy(children, ctx.Children())
 			sort.Slice(children, func(i, j int) bool {
 				return children[i].Length() < children[j].Length()
