@@ -9,6 +9,9 @@ type CloveContext interface {
 	CloveHandler
 	context.Context
 	Cancel()
+
+	AddOption(string, interface{}) 
+	Option(string) (interface{}, bool)
 }
 
 type cloveContext struct {
