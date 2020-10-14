@@ -2,28 +2,37 @@ package persistance
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 
 	"github.com/ioswarm/golik"
 )
 
-type ConnectionPoolSettings interface {
-	Name() string
+type HandlerCreation func(golik.CloveContext) (Handler, error)
 
-	PoolSize() int
+type ConnectionPoolSettings struct {
+	Name       string
+	PoolSize   int
+	Type       reflect.Type
+	IndexField string
+	Options    map[string]interface{}
 
-	Connect(golik.CloveContext) error
-	Close(golik.CloveContext) error
+	PreStart  interface{}
+	PostStart interface{}
+	PreStop   interface{}
+	PostStop  interface{}
 
-	CreateHandler(golik.CloveContext) (Handler, error)
+	CreateHandler HandlerCreation
+	Behavior      interface{}
 }
 
-func NewConnectionPool(settings ConnectionPoolSettings) *golik.Clove {
+func NewConnectionPool(settings *ConnectionPoolSettings) *golik.Clove {
 	return &golik.Clove{
-		Name:     settings.Name(),
+		Name:     settings.Name,
 		Sync:     true,
-		PreStart: settings.Connect,
-		PostStop: settings.Close,
+		PreStart: settings.PreStart,
+		PreStop: settings.PreStop,
+		PostStop: settings.PostStop,
 		Behavior: func(ctx golik.CloveContext, msg golik.Message) {
 			children := make([]golik.CloveRef, len(ctx.Children()))
 			copy(children, ctx.Children())
@@ -36,18 +45,25 @@ func NewConnectionPool(settings ConnectionPoolSettings) *golik.Clove {
 			}
 		},
 		PostStart: func(ctx golik.CloveContext) error {
-			for i := 0; i < settings.PoolSize(); i++ {
+			for i := 0; i < settings.PoolSize; i++ {
 				handler, err := settings.CreateHandler(ctx)
 				if err != nil {
 					return err
 				}
 				if _, err := ctx.Execute(&golik.Clove{
-					Name:     fmt.Sprintf("%v-%v", settings.Name(), i),
+					Name:     fmt.Sprintf("%v-%v", settings.Name, i),
 					Behavior: handler,
 				}); err != nil {
 					return err
 				}
 			}
+
+			if settings.PostStart != nil {
+				if err := golik.CallLifecycle(ctx, settings.PostStart); err != nil {
+					return err
+				}
+			}
+
 			return nil
 		},
 	}
