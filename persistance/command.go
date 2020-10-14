@@ -9,6 +9,7 @@ type Get struct {
 }
 
 type Update struct {
+	Id interface{} `json:"id,omitempty"`
 	Entity interface{} `json:"entity,omitempty"`
 }
 
