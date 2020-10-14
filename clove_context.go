@@ -2,6 +2,7 @@ package golik
 
 import (
 	"context"
+	"sync"
 )
 
 type CloveContext interface {
@@ -14,10 +15,13 @@ type cloveContext struct {
 	context.Context
 	runnable CloveRunnable
 	cancel   context.CancelFunc
+	options map[string]interface{}
+
+	mutex sync.Mutex
 }
 
 func newCloveContext(context context.Context, cancel context.CancelFunc, runnable CloveRunnable) CloveContext {
-	return &cloveContext{context, runnable, cancel}
+	return &cloveContext{context, runnable, cancel, make(map[string]interface{}), sync.Mutex{}}
 }
 
 func (cc *cloveContext) System() Golik {
@@ -66,6 +70,19 @@ func (cc *cloveContext) Subscribe(f func(interface{}) bool) error {
 
 func (cc *cloveContext) Unsubscribe() {
 	cc.runnable.Unsubscribe()
+}
+
+func (cc *cloveContext) AddOption(name string, value interface{}) {
+	cc.mutex.Lock()
+	defer cc.mutex.Unlock()
+	cc.options[name] = value
+}
+
+func (cc *cloveContext) Option(name string) (interface{}, bool) {
+	if value, ok := cc.options[name]; ok {
+		return value, ok
+	}
+	return nil, false
 }
 
 func (cc *cloveContext) Debug(msg string, values ...interface{}) {
