@@ -189,7 +189,7 @@ func executeLifecycle(ctx CloveContext, f interface{}) error {
 	return nil
 }
 
-func callLifecycle(ctx CloveContext, f interface{}) error {
+func CallLifecycle(ctx CloveContext, f interface{}) error {
 	c := make(chan error, 1)
 	go func() { c <- executeLifecycle(ctx, f) }()
 	select {
@@ -301,7 +301,7 @@ func callStructValueMethod(ctx CloveContext, msg Message, svalue reflect.Value) 
 		meths = findMethodsOf(svalue, reflect.TypeOf(msg))
 	}
 	if len(meths) == 0 {
-		// TODO reploy with no method found ... propagate to parent
+		// TODO reply with no method found ... propagate to parent
 		return
 	}
 	callBehaviorValue(ctx, msg, meths[0])

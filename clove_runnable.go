@@ -300,7 +300,7 @@ func (cr *cloveRunnable) Unsubscribe() {
 func (cr *cloveRunnable) PreStart() error {
 	ctx := cr.NewContextWithTimeout(context.Background(), cr.Settings().PreStartTimeout())
 	if cr.Clove().PreStart != nil {
-		if err := callLifecycle(ctx, cr.Clove().PreStart); err != nil {
+		if err := CallLifecycle(ctx, cr.Clove().PreStart); err != nil {
 			return err
 		}
 	}
@@ -318,7 +318,7 @@ func (cr *cloveRunnable) PreStart() error {
 func (cr *cloveRunnable) PostStart() error {
 	ctx := cr.NewContextWithTimeout(context.Background(), cr.Settings().PostStartTimeout())
 	if cr.Clove().PostStart != nil {
-		if err := callLifecycle(ctx, cr.Clove().PostStart); err != nil {
+		if err := CallLifecycle(ctx, cr.Clove().PostStart); err != nil {
 			return err
 		}
 	}
@@ -336,7 +336,7 @@ func (cr *cloveRunnable) PostStart() error {
 func (cr *cloveRunnable) PreStop() error {
 	ctx := cr.NewContextWithTimeout(context.Background(), cr.Settings().PreStopTimeout())
 	if cr.Clove().PreStop != nil {
-		if err := callLifecycle(ctx, cr.Clove().PreStop); err != nil {
+		if err := CallLifecycle(ctx, cr.Clove().PreStop); err != nil {
 			return err
 		}
 	}
@@ -354,7 +354,7 @@ func (cr *cloveRunnable) PreStop() error {
 func (cr *cloveRunnable) PostStop() error {
 	ctx := cr.NewContextWithTimeout(context.Background(), cr.Settings().PostStopTimeout())
 	if cr.Clove().PostStop != nil {
-		if err := callLifecycle(ctx, cr.Clove().PostStop); err != nil {
+		if err := CallLifecycle(ctx, cr.Clove().PostStop); err != nil {
 			return err
 		}
 	}
