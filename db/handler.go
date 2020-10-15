@@ -8,11 +8,11 @@ import (
 type Handler interface {
 	Filter(golik.CloveContext, *filter.Filter) (*filter.Result, error)
 
-	Create(golik.CloveContext, *Create) error
-	Read(golik.CloveContext, *Get) (interface{}, error)
-	Update(golik.CloveContext, *Update) error
+	Create(golik.CloveContext, *CreateCommand) error
+	Read(golik.CloveContext, *GetCommand) (interface{}, error)
+	Update(golik.CloveContext, *UpdateCommand) error
 	// TODO Patch
-	Delete(golik.CloveContext, *Delete) (interface{}, error)
+	Delete(golik.CloveContext, *DeleteCommand) (interface{}, error)
 
 	OrElse(ctx golik.CloveContext, msg golik.Message)
 }
