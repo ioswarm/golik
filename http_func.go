@@ -1,18 +1,16 @@
-package http
+package golik
 
 import (
 	"strconv"
 	"encoding/json"
 	"errors"
 	"io"
-	ht "net/http"
+	"net/http"
 	"reflect"
-
-	"github.com/ioswarm/golik"
 )
 
 var (
-	ctxType = reflect.TypeOf((*golik.RouteContext)(nil)).Elem()
+	ctxType = reflect.TypeOf((*RouteContext)(nil)).Elem()
 )
 
 func validateRouteFunc(f interface{}) error {
@@ -42,12 +40,12 @@ func decodeParam(inType reflect.Type, reader io.Reader) (reflect.Value, error) {
 	}
 }
 
-func handleError(err interface{}) golik.Response {
+func handleError(err interface{}) Response {
 	switch err.(type) {
-	case *golik.Error:
-		e := err.(*golik.Error)
-		result := golik.Response{
-			StatusCode: ht.StatusInternalServerError,
+	case *Error:
+		e := err.(*Error)
+		result := Response{
+			StatusCode: http.StatusInternalServerError,
 			Content: e,
 		}
 		if val, ok := e.Meta["http.status"]; ok {
@@ -57,33 +55,33 @@ func handleError(err interface{}) golik.Response {
 		}
 		return result
 	case error:
-		return golik.Response{
-			StatusCode: ht.StatusInternalServerError,
-			Content: golik.Errorln(err.(error)),
+		return Response{
+			StatusCode: http.StatusInternalServerError,
+			Content: Errorln(err.(error)),
 		}
 	default:
-		return golik.Response{
-			StatusCode: ht.StatusInternalServerError,
-			Content: &golik.Error{
+		return Response{
+			StatusCode: http.StatusInternalServerError,
+			Content: &Error{
 				Message: "Unknown error occurd",
 			},
 		}
 	}
 }
 
-func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
+func handleRoute(ctx RouteContext, f interface{}) Response {
 	fType := reflect.TypeOf(f)
 	fValue := reflect.ValueOf(f)
 
 	params := make([]reflect.Value, 0)
 	if fType.NumIn() == 1 {
-		if golik.CompareType(fType.In(0), ctxType) {
+		if CompareType(fType.In(0), ctxType) {
 			params = append(params, reflect.ValueOf(ctx))
 		} else {
 			paramValue, err := decodeParam(fType.In(0), ctx.Content())
 			if err != nil {
-				return golik.Response{
-					StatusCode: ht.StatusBadRequest,
+				return Response{
+					StatusCode: http.StatusBadRequest,
 					Content: err,
 				}
 			}
@@ -95,8 +93,8 @@ func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
 		params = append(params, reflect.ValueOf(ctx))
 		paramValue, err := decodeParam(fType.In(1), ctx.Content())
 		if err != nil {
-			return golik.Response{
-				StatusCode: ht.StatusBadRequest,
+			return Response{
+				StatusCode: http.StatusBadRequest,
 				Content: err,
 			}
 		}
@@ -107,19 +105,19 @@ func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
 	results := fValue.Call(params)
 
 	if fType.NumOut() == 1 {
-		if golik.IsErrorType(fType.Out(0)) {
+		if IsErrorType(fType.Out(0)) {
 			if !results[0].IsNil() {
 				return handleError(results[0].Interface())
 			}
 		}
-		/*if utils.CompareType(fType.Out(0), reflect.TypeOf(golik.Response{})) {
-			return results[0].Interface().(golik.Response)
+		/*if utils.CompareType(fType.Out(0), reflect.TypeOf(Response{})) {
+			return results[0].Interface().(Response)
 		}*/
-		if resp, ok := results[0].Interface().(golik.Response); ok {
+		if resp, ok := results[0].Interface().(Response); ok {
 			return resp
 		}
-		return golik.Response{
-			StatusCode: ht.StatusOK,
+		return Response{
+			StatusCode: http.StatusOK,
 			Content: results[0].Interface(),
 		}
 	}
@@ -127,17 +125,17 @@ func handleRoute(ctx golik.RouteContext, f interface{}) golik.Response {
 		if !results[1].IsNil() {
 			return handleError(results[1].Interface())
 		}
-		/*if utils.CompareType(fType.Out(0), reflect.TypeOf(golik.Response{})) {
-			return results[0].Interface().(golik.Response)
+		/*if utils.CompareType(fType.Out(0), reflect.TypeOf(Response{})) {
+			return results[0].Interface().(Response)
 		}*/
-		if resp, ok := results[0].Interface().(golik.Response); ok {
+		if resp, ok := results[0].Interface().(Response); ok {
 			return resp
 		}
-		return golik.Response{
-			StatusCode: ht.StatusOK,
+		return Response{
+			StatusCode: http.StatusOK,
 			Content: results[0].Interface(),
 		}
 	}
 
-	return golik.Response{StatusCode: ht.StatusOK}
+	return Response{StatusCode: http.StatusOK}
 }

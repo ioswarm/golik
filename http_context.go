@@ -1,29 +1,28 @@
-package http
+package golik
 
 import (
 	"context"
 	"io"
-	ht "net/http"
+	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/ioswarm/golik"
 )
 
-func newHttpRouteContext(context context.Context, handler golik.CloveHandler, request *ht.Request) *httpRouteContext {
+func newHttpRouteContext(context context.Context, handler CloveHandler, request *http.Request) *httpRouteContext {
 	return &httpRouteContext{context, handler, request}
 }
 
 type httpRouteContext struct {
 	context.Context
-	handler golik.CloveHandler
-	request *ht.Request
+	handler CloveHandler
+	request *http.Request
 }
 
-func (ctx *httpRouteContext) Handler() golik.CloveHandler {
+func (ctx *httpRouteContext) Handler() CloveHandler {
 	return ctx.handler
 }
 
-func (ctx *httpRouteContext) Header() golik.Values {
+func (ctx *httpRouteContext) Header() Values {
 	header := make(map[string]string)
 	uheader := ctx.request.Header
 	for k := range uheader {
@@ -32,11 +31,11 @@ func (ctx *httpRouteContext) Header() golik.Values {
 	return header
 }
 
-func (ctx *httpRouteContext) Params() golik.Values {
+func (ctx *httpRouteContext) Params() Values {
 	return mux.Vars(ctx.request)
 }
 
-func (ctx *httpRouteContext) Queries() golik.Values {
+func (ctx *httpRouteContext) Queries() Values {
 	queries := make(map[string]string)
 	uqueriey := ctx.request.URL.Query()
 	for k := range uqueriey {

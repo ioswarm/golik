@@ -1,28 +1,27 @@
-package http
+package golik
 
 import (
 	"context"
 	"encoding/json"
-	ht "net/http"
+	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/ioswarm/golik"
 )
 
 type HttpService struct {
 	name     string
-	system   golik.Golik
-	server   *ht.Server
+	system   Golik
+	server   *http.Server
 	settings *httpSettings
-	handler golik.CloveHandler
+	handler CloveHandler
 	Router   *mux.Router
 }
 
-func Http(system golik.Golik) (*HttpService, error) {
+func Http(system Golik) (*HttpService, error) {
 	return NewHttp("http", system)
 }
 
-func NewHttp(name string, system golik.Golik) (*HttpService, error) {
+func NewHttp(name string, system Golik) (*HttpService, error) {
 	hs := &HttpService{
 		name:   name,
 		system: system,
@@ -40,23 +39,23 @@ func NewHttp(name string, system golik.Golik) (*HttpService, error) {
 	return hs, nil
 }
 
-func (hs *HttpService) CreateServiceInstance(system golik.Golik) *golik.Clove {
-	return &golik.Clove{
+func (hs *HttpService) CreateServiceInstance(system Golik) *Clove {
+	return &Clove{
 		Name: hs.name,
-		Behavior: func(ctx golik.CloveContext, msg golik.Message) {
-			msg.Reply(golik.Done())  // 
+		Behavior: func(ctx CloveContext, msg Message) {
+			msg.Reply(Done())  // 
 		},
-		PreStart: func(ctx golik.CloveContext) {
+		PreStart: func(ctx CloveContext) {
 			hs.run(ctx)
 		},
-		PostStop: func(ctx golik.CloveContext) {
+		PostStop: func(ctx CloveContext) {
 			hs.shutdown(ctx)
 		},
 	}
 }
 
-func (hs *HttpService) run(ctx golik.CloveContext) {
-	hs.server = &ht.Server{
+func (hs *HttpService) run(ctx CloveContext) {
+	hs.server = &http.Server{
 		Addr:         hs.settings.Addr(),
 		Handler:      hs.Router,
 		ReadTimeout:  hs.settings.ReadTimeout,
@@ -65,7 +64,7 @@ func (hs *HttpService) run(ctx golik.CloveContext) {
 	}
 
 	go func() {
-		if err := hs.server.ListenAndServe(); err != nil && err != ht.ErrServerClosed {
+		if err := hs.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			ctx.Error("Error in http-service execution ...", err)
 		}
 	}()
@@ -73,7 +72,7 @@ func (hs *HttpService) run(ctx golik.CloveContext) {
 	ctx.Info("Http-Server '%v' is listening on %v", hs.name, hs.settings.Addr())
 }
 
-func (hs *HttpService) shutdown(ctx golik.CloveContext) error {
+func (hs *HttpService) shutdown(ctx CloveContext) error {
 	c, cancel := context.WithTimeout(context.Background(), hs.settings.ShutdownTimeout)
 	defer cancel()
 
@@ -86,17 +85,17 @@ func (hs *HttpService) shutdown(ctx golik.CloveContext) error {
 	return nil
 }
 
-func (hs *HttpService) HandleFunc(path string, f func(ht.ResponseWriter, *ht.Request)) *mux.Route {
+func (hs *HttpService) HandleFunc(path string, f func(http.ResponseWriter, *http.Request)) *mux.Route {
 	return hs.Router.HandleFunc(path, f)
 }
 
-func (hs *HttpService) Handle(route golik.Route) error {
+func (hs *HttpService) Handle(route Route) error {
 	return hs.handleRoute(hs.Router, route)
 }
 
-func (hs *HttpService) handleRoute(mrouter *mux.Router, route golik.Route) error {
+func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 	if route.Handle == nil && len(route.Subroutes) == 0 {
-		return golik.Errorf("Handle-Func and Subroutes are empty for %v", route.Path)
+		return Errorf("Handle-Func and Subroutes are empty for %v", route.Path)
 	}
 
 	method := "GET"
@@ -114,7 +113,7 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route golik.Route) error
 			return err
 		}
 		
-		r.Methods(method).HandlerFunc(func(w ht.ResponseWriter, r *ht.Request) {
+		r.Methods(method).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := newHttpRouteContext(r.Context(), hs.handler, r)
 			resp := handleRoute(ctx, route.Handle)
 
