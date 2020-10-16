@@ -1,4 +1,4 @@
-package filter
+package golik
 
 type Filter struct {
 	Filter string `json:"filter,omitempty"`
