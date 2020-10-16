@@ -1,4 +1,4 @@
-package db
+package golik
 
 import (
 	"errors"
