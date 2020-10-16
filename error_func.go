@@ -50,6 +50,25 @@ func (e *Error) HttpStatus() int {
 
 
 
+
+func ErrorOf(i interface{}) *Error {
+	if i == nil {
+		return NewError("Nil pointer")
+	}
+	switch i.(type) {
+	case *Error:
+		return i.(*Error)
+	case Error:
+		err := i.(Error)
+		return &err
+	case error:
+		err := i.(error)
+		return NewError(err.Error())
+	default:
+		return Errorf("%v", i)
+	}
+}
+
 func NewError(message string) *Error {
 	return &Error{
 		Message: message,
