@@ -93,6 +93,7 @@ type Grouping interface {
 	InnerGroup() Condition
 }
 
+
 func AttributeCondition(name string, op Operator, value interface{}) Operand {
 	/*
 		if op == PR {
@@ -194,6 +195,13 @@ func Group(condition Condition) Grouping {
 func Not(condition Condition) LogicNot {
 	return &notCondition{condition}
 }
+
+func EmptyCondition() Condition { return &emptyCondition{} }
+type emptyCondition struct {}
+func (ec *emptyCondition) AND(right Condition) Logic { return And(ec, right) }
+func (ec *emptyCondition) OR(right Condition) Logic { return Or(ec, right) }
+func (ec *emptyCondition) Command() string { return "" }
+func (ec *emptyCondition) Check(obj interface{}) bool { return true }
 
 type prCondition struct {
 	attribute string
