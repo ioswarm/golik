@@ -25,8 +25,8 @@ type Golik interface {
 
 	ExecuteService(Service) (CloveHandler, error)
 
-	NewTimer(time.Duration, func(time.Time)) *time.Timer
-	NewTicker(time.Duration, func(time.Time)) *time.Ticker
+	NewTimer(time.Duration, func(time.Time)) *Timer
+	NewTicker(time.Duration, func(time.Time)) *Ticker
 }
 
 func NewSystem(name string) (Golik, error) {
@@ -37,7 +37,7 @@ func NewSystem(name string) (Golik, error) {
 	}
 
 	sys.core = newRunnable(sys, nil, newCore())
-	
+
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
@@ -69,8 +69,8 @@ type golikSystem struct {
 	exitChan chan int
 	settings Settings
 	core     *cloveRunnable
-	srv *cloveRunnable
-	usr *cloveRunnable
+	srv      *cloveRunnable
+	usr      *cloveRunnable
 }
 
 func (sys *golikSystem) Name() string {
@@ -84,7 +84,7 @@ func (sys *golikSystem) Terminate() {
 func (sys *golikSystem) TerminateWithTimeout(timeout time.Duration) {
 	go func() {
 		select {
-		case res := <- sys.core.Self().Request(context.Background(), Stop()):
+		case res := <-sys.core.Self().Request(context.Background(), Stop()):
 			switch res.(type) {
 			case error:
 				log.Fatalf("Error while stoppping cloves: %v", res)
@@ -92,7 +92,7 @@ func (sys *golikSystem) TerminateWithTimeout(timeout time.Duration) {
 				log.Println("golik is going down bye")
 				sys.exitChan <- 0
 			}
-		case <- time.After(timeout):
+		case <-time.After(timeout):
 			log.Fatalln("Timeout while stopping cloves")
 		}
 	}()
@@ -122,22 +122,42 @@ func (sys *golikSystem) ExecuteService(srv Service) (CloveHandler, error) {
 	return runnable, nil
 }
 
-func (sys *golikSystem) NewTimer(duration time.Duration, f func(time time.Time)) *time.Timer {
+func (sys *golikSystem) NewTimer(duration time.Duration, f func(time time.Time)) *Timer {
 	t := time.NewTimer(duration)
+	done := make(chan bool)
 
 	go func() {
-		f(<- t.C)
+		select {
+		case <-done:
+			return
+		case tx := <-t.C:
+			f(tx)
+		}
 	}()
 
-	return t
+	return &Timer{
+		done:  done,
+		timer: t,
+	}
 }
 
-func (sys *golikSystem) NewTicker(interval time.Duration, f func(time time.Time)) *time.Ticker {
+func (sys *golikSystem) NewTicker(interval time.Duration, f func(time time.Time)) *Ticker {
 	t := time.NewTicker(interval)
+	done := make(chan bool)
 
 	go func() {
-		f(<- t.C)
+		for {
+			select {
+			case <-done:
+				return
+			case tx := <-t.C:
+				f(tx)
+			}
+		}
 	}()
 
-	return t
+	return &Ticker{
+		done:   done,
+		ticker: t,
+	}
 }
