@@ -3,6 +3,7 @@ package golik
 import (
 	"context"
 	"io"
+	"github.com/gorilla/mux"
 )
 
 type RouteContext interface {
@@ -22,6 +23,7 @@ type Route struct {
 	Method    string
 	Handle    interface{}
 	Subroutes []Route
+	Middleware []mux.MiddlewareFunc
 }
 
 type Response struct {

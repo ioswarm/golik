@@ -102,12 +102,13 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 	if route.Method != "" {
 		method = route.Method
 	}
-
+	
 	//r := mrouter.NewRoute().Path(route.Path)
 	r := mrouter.NewRoute().Path(route.Path)
 	if len(route.Subroutes) > 0 {
 		r = mrouter.PathPrefix(route.Path)
 	}
+
 	if route.Handle != nil {
 		if err := validateRouteFunc(route.Handle); err != nil {
 			return err
@@ -133,6 +134,7 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 
 	if len(route.Subroutes) > 0 {
 		srouter := r.Subrouter()
+		srouter.Use(route.Middleware...)
 		for _, sr := range route.Subroutes {
 			if err := hs.handleRoute(srouter, sr); err != nil {
 				return err
