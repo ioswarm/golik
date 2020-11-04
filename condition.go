@@ -93,7 +93,6 @@ type Grouping interface {
 	InnerGroup() Condition
 }
 
-
 func AttributeCondition(name string, op Operator, value interface{}) Operand {
 	/*
 		if op == PR {
@@ -197,10 +196,12 @@ func Not(condition Condition) LogicNot {
 }
 
 func EmptyCondition() Condition { return &emptyCondition{} }
-type emptyCondition struct {}
-func (ec *emptyCondition) AND(right Condition) Logic { return And(ec, right) }
-func (ec *emptyCondition) OR(right Condition) Logic { return Or(ec, right) }
-func (ec *emptyCondition) Command() string { return "" }
+
+type emptyCondition struct{}
+
+func (ec *emptyCondition) AND(right Condition) Logic  { return And(ec, right) }
+func (ec *emptyCondition) OR(right Condition) Logic   { return Or(ec, right) }
+func (ec *emptyCondition) Command() string            { return "" }
 func (ec *emptyCondition) Check(obj interface{}) bool { return true }
 
 type prCondition struct {
@@ -229,13 +230,12 @@ func (c *prCondition) Attribute() string {
 }
 
 func (c *prCondition) Operator() Operator {
-	return c.Operator()
+	return PR
 }
 
 func (c *prCondition) Value() interface{} {
 	return nil
 }
-
 
 type stringCondition struct {
 	attribute string
@@ -297,7 +297,6 @@ func (c *stringCondition) Value() interface{} {
 	return c.value
 }
 
-
 type boolCondition struct {
 	attribute string
 	operator  Operator
@@ -351,13 +350,12 @@ func (c *boolCondition) Attribute() string {
 }
 
 func (c *boolCondition) Operator() Operator {
-	return c.Operator()
+	return c.operator
 }
 
 func (c *boolCondition) Value() interface{} {
 	return c.value
 }
-
 
 type intCondition struct {
 	attribute string
@@ -422,14 +420,12 @@ func (c *intCondition) Attribute() string {
 }
 
 func (c *intCondition) Operator() Operator {
-	return c.Operator()
+	return c.operator
 }
 
 func (c *intCondition) Value() interface{} {
 	return c.value
 }
-
-
 
 type float64Condition struct {
 	attribute string
@@ -486,13 +482,12 @@ func (c *float64Condition) Attribute() string {
 }
 
 func (c *float64Condition) Operator() Operator {
-	return c.Operator()
+	return c.operator
 }
 
 func (c *float64Condition) Value() interface{} {
 	return c.value
 }
-
 
 type compoundCondition struct {
 	left    Condition
@@ -534,7 +529,6 @@ func (c *compoundCondition) Right() Condition {
 	return c.right
 }
 
-
 type groupCondition struct {
 	condition Condition
 }
@@ -558,7 +552,6 @@ func (c *groupCondition) OR(right Condition) Logic {
 func (c *groupCondition) InnerGroup() Condition {
 	return c.condition
 }
-
 
 type notCondition struct {
 	condition Condition
