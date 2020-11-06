@@ -22,12 +22,12 @@ func (s *httpSettings) Addr() string {
 
 func newBaseHTTPSettings() *httpSettings {
 	return &httpSettings{
-		Host:            viper.GetString("http.host"),
-		Port:            viper.GetInt("http.port"),
-		ReadTimeout:     viper.GetDuration("http.readTimeout") * time.Second,
-		WriteTimeout:    viper.GetDuration("http.writeTimeout") * time.Second,
-		IdleTimeout:     viper.GetDuration("http.idleTimeout") * time.Second,
-		ShutdownTimeout: viper.GetDuration("http.shutdownTimeout") * time.Second,
+		Host:            viper.GetString("golik.http.host"),
+		Port:            viper.GetInt("golik.http.port"),
+		ReadTimeout:     viper.GetDuration("golik.http.readTimeout") * time.Second,
+		WriteTimeout:    viper.GetDuration("golik.http.writeTimeout") * time.Second,
+		IdleTimeout:     viper.GetDuration("golik.http.idleTimeout") * time.Second,
+		ShutdownTimeout: viper.GetDuration("golik.http.shutdownTimeout") * time.Second,
 	}
 }
 
@@ -35,7 +35,7 @@ func newHTTPSettings(name string) *httpSettings {
 	bs := newBaseHTTPSettings()
 
 	getPath := func(segment string) string {
-		return fmt.Sprintf("http.%v.%v", name, segment)
+		return fmt.Sprintf("golik.http.%v.%v", name, segment)
 	}
 
 	path := getPath("host")
@@ -72,10 +72,10 @@ func newHTTPSettings(name string) *httpSettings {
 }
 
 func init() {
-	viper.SetDefault("http.host", "")
-	viper.SetDefault("http.port", 9000)
-	viper.SetDefault("http.readTimeout", 5)
-	viper.SetDefault("http.writeTimeout", 10)
-	viper.SetDefault("http.idleTimeout", 15)
-	viper.SetDefault("http.shutownTimeout", 10)
+	viper.SetDefault("golik.http.host", "")
+	viper.SetDefault("golik.http.port", 9000)
+	viper.SetDefault("golik.http.readTimeout", 5)
+	viper.SetDefault("golik.http.writeTimeout", 10)
+	viper.SetDefault("golik.http.idleTimeout", 15)
+	viper.SetDefault("golik.http.shutownTimeout", 10)
 }
