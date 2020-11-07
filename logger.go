@@ -5,11 +5,11 @@ import (
 	"github.com/spf13/viper"
 )
 
-func NewLogger() *Clove {
+func newLogger() *Clove {
 	return &Clove{
 		Name: "logger",
 		Sync: true,
-		Behavior: func (l *LogEntry) {
+		Behavior: func(l *LogEntry) {
 			entry := l.logrusEntry()
 			switch l.LogLevel {
 			case LogLevel_DEBUG:
@@ -17,7 +17,7 @@ func NewLogger() *Clove {
 			case LogLevel_WARN:
 				entry.Warn(l.Message)
 			case LogLevel_ERROR:
-				entry.Warn(l.Message)
+				entry.Error(l.Message)
 			case LogLevel_FATAL:
 				entry.Fatal(l.Message)
 			default:
@@ -26,7 +26,7 @@ func NewLogger() *Clove {
 		},
 		PreStart: func() {
 			initLogging()
-		}, 
+		},
 		PostStart: func(ctx CloveContext) error {
 			if err := ctx.Subscribe(func(data interface{}) bool {
 				switch data.(type) {
@@ -50,7 +50,7 @@ func initLogging() {
 		initSettings()
 
 		switch viper.GetString("golik.log.level") {
-		case "DEBUG": 
+		case "DEBUG":
 			logrus.SetLevel(logrus.DebugLevel)
 		case "WARN":
 			logrus.SetLevel(logrus.WarnLevel)
@@ -63,16 +63,16 @@ func initLogging() {
 		default:
 			logrus.SetLevel(logrus.InfoLevel)
 		}
-	
+
 		switch viper.GetString("golik.log.formatter") {
 		case "json":
 			logrus.SetFormatter(&logrus.JSONFormatter{
 				TimestampFormat: "2006-01-02T15:04:05.000Z07:00",
 			})
 		default:
-			logrus.SetFormatter(&logrus.TextFormatter{ 
+			logrus.SetFormatter(&logrus.TextFormatter{
 				TimestampFormat: "2006-01-02T15:04:05.000Z07:00",
-				FullTimestamp: true,
+				FullTimestamp:   true,
 			})
 		}
 

@@ -11,11 +11,7 @@ func newSrv() *Clove {
 			msg.Reply(Errorln("Sending to srv is not supported"))
 		},
 		PostStart: func(ctx CloveContext) error {
-			if _, err := ctx.Execute(NewLogger()); err != nil {
-				return err
-			}
-
-			ctx.Info("%v is up ... ready to receive new services", ctx.Path())
+			ctx.Info("%v is up, ready to receive new services", ctx.Path())
 			return nil
 		},
 	}

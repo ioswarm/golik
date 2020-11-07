@@ -32,6 +32,9 @@ func newCore() *Clove {
 		PreStart: func(ctx CloveContext) {
 			fmt.Println("\033[1;36m", title, "\033[0m")
 		},
+		PostStart: func(ctx CloveContext) {
+			ctx.Execute(newLogger())
+		},
 	}
 }
 
