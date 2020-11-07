@@ -1,14 +1,18 @@
 package golik
 
-
 // Lifecycle commands
 
-type StopCommand struct {}
+type StopCommand struct{}
 
 func Stop() StopCommand {
 	return StopCommand{}
 }
 
+type KillCommand struct{}
+
+func Kill() KillCommand {
+	return KillCommand{}
+}
 
 type DoneEvent struct{}
 
@@ -16,7 +20,7 @@ func Done() DoneEvent {
 	return DoneEvent{}
 }
 
-type StoppedEvent struct {}
+type StoppedEvent struct{}
 
 func Stopped() StoppedEvent {
 	return StoppedEvent{}
@@ -31,9 +35,6 @@ func ChildStopped(ref CloveRef) ChildStoppedEvent {
 		Ref: ref,
 	}
 }
-
-
-
 
 // data pool commands
 

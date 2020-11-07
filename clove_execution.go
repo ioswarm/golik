@@ -1,8 +1,6 @@
 package golik
 
 import (
-	"context"
-	"fmt"
 	"reflect"
 )
 
@@ -36,8 +34,6 @@ const (
 )
 
 func behaviorCategory(ftype reflect.Type) BehaviorCategory {
-	//ftype := reflect.TypeOf(f)
-
 	if ftype.Kind() == reflect.Func {
 		if ftype.NumIn() == 0 && ftype.NumOut() == 0 {
 			return NONEWITHNONE
@@ -269,7 +265,7 @@ func callBehaviorValue(ctx CloveContext, msg Message, fvalue reflect.Value) {
 		//fmt.Println("Call struct or pointer")
 		callStructValueMethod(ctx, msg, fvalue)
 	default:
-		// TODO Reply with MajorError/Fatal ... propagate to parent
+		msg.Reply(Errorln("Could not handle behavior"))
 	}
 }
 
@@ -286,7 +282,7 @@ func callStructValueMethod(ctx CloveContext, msg Message, svalue reflect.Value) 
 		svalue = ptr
 	}
 	if stype.Kind() != reflect.Ptr {
-		// TODO reply with MajorError/Fatal ... propagte to parent
+		msg.Reply(Errorln("Given behavior is not a pointer of struct"))
 		return
 	}
 	ctype := reflect.TypeOf(msg.Content())
@@ -301,7 +297,7 @@ func callStructValueMethod(ctx CloveContext, msg Message, svalue reflect.Value) 
 		meths = findMethodsOf(svalue, reflect.TypeOf(msg))
 	}
 	if len(meths) == 0 {
-		// TODO reply with no method found ... propagate to parent
+		msg.Reply(Errorln("No suitable method found"))
 		return
 	}
 	callBehaviorValue(ctx, msg, meths[0])
@@ -344,10 +340,10 @@ func callStructValueMethodByName(ctx CloveContext, svalue reflect.Value, methodN
 	return []interface{}{}
 }
 
-func defaultLifecycleHandler(runnable CloveRunnable) {
+func defaultLifecycleHandler(runnable CloveRunnable) error {
 	if err := runnable.PreStart(); err != nil {
-		// TODO propagate error to parent with self-ref
-		return
+		runnable.Error("Error while pre-starting: %v", err)
+		return err
 	}
 
 	go func() {
@@ -355,9 +351,9 @@ func defaultLifecycleHandler(runnable CloveRunnable) {
 			msg, ok := <-runnable.Messages()
 			if !ok {
 				// channel closed exit loop
-				break
+				return
 			}
-			//fmt.Printf("Got message of %T at %v\n", msg.Content(), runnable.Path())
+			
 			ctx := runnable.NewContext(msg.Context())
 			switch data := msg.Content(); data.(type) {
 			case ChildStoppedEvent:
@@ -365,20 +361,21 @@ func defaultLifecycleHandler(runnable CloveRunnable) {
 				runnable.RemoveChild(evt.Ref)
 				msg.Reply(Done())
 			case StopCommand:
-				//go func() {
 				if err := runnable.PreStop(); err != nil {
-					// TODO propagate error
+					runnable.Error("Error while pre-stopping: %v", err)
 				}
 
 				cl := make([]CloveRef, len(runnable.Children()))
 				copy(cl, runnable.Children())
 				for _, child := range cl {
-					<-child.Request(context.Background(), Stop())
+					<-child.Request(ctx, Stop())
 					runnable.RemoveChild(child)
 				}
 
+				runnable.Close()
+
 				if err := runnable.PostStop(); err != nil {
-					// TODO propagte error
+					runnable.Error("Error while post-stopping: %v", err)
 				}
 
 				if parent, ok := runnable.Parent(); ok {
@@ -387,8 +384,14 @@ func defaultLifecycleHandler(runnable CloveRunnable) {
 
 				msg.Reply(Stopped())
 
-				return // TODO return ends only go func not loop
-				//}()
+				return
+			case KillCommand:
+				for _, child := range runnable.Children() {
+					child.Send(Kill())
+				}
+
+				runnable.Close()
+				return
 			default:
 				if runnable.Clove().Sync {
 					// fmt.Println("Execute in sync mode")
@@ -402,7 +405,10 @@ func defaultLifecycleHandler(runnable CloveRunnable) {
 	}()
 
 	if err := runnable.PostStart(); err != nil {
-		fmt.Println("Error while PostStart", runnable.Clove().Name, err)
-		// TODO kill self and propagate error to parent
+		runnable.Error("Error while post-starting: %v", err)
+		runnable.Self().Send(Kill())
+		return err
 	}
+
+	return nil
 }

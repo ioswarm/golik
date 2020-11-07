@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type LifecycleHandler func(CloveRunnable)
+type LifecycleHandler func(CloveRunnable) error
 
 type CloveHandler interface {
 	Loggable
@@ -45,6 +45,8 @@ type CloveRunnable interface {
 	PostStop() error
 
 	RemoveChild(CloveRef) bool
+
+	Close()
 }
 
 func newRunnable(system Golik, parent *cloveRunnable, clove *Clove) *cloveRunnable {
@@ -88,8 +90,8 @@ type cloveRunnable struct {
 	mutex           sync.Mutex
 }
 
-func (cr *cloveRunnable) run() {
-	cr.handler(cr)
+func (cr *cloveRunnable) run() error {
+	return cr.handler(cr)
 }
 
 func (cr *cloveRunnable) System() Golik {
@@ -186,10 +188,13 @@ func (cr *cloveRunnable) executeInternal(clove *Clove) (*cloveRunnable, error) {
 	if err := clove.Validate(); err != nil {
 		return nil, err
 	}
+	cr.Debug("Executing clove %s ", clove.Name)
 
 	child := newRunnable(cr.System(), cr, clove)
 	if cr.appendChild(child) {
-		child.run()
+		if err := child.run(); err != nil {
+			return nil, err
+		}
 		return child, nil
 	}
 
@@ -202,6 +207,10 @@ func (cr *cloveRunnable) Execute(clove *Clove) (CloveRef, error) {
 		return nil, err
 	}
 	return r.Self(), nil
+}
+
+func (cr *cloveRunnable) Close() {
+	close(cr.messages)
 }
 
 func (cr *cloveRunnable) NewContext(parent context.Context) CloveContext {
