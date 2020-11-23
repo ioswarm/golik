@@ -170,7 +170,9 @@ func Parse(s string) (Condition, error) {
 		if strings.HasPrefix(lower, "and") || strings.HasPrefix(lower, "or") {
 			return parseLogicalRight(strings.TrimSpace(s))
 		}
-		return parseLogical(strings.TrimSpace(s))
+		if strings.Contains(lower, " and ") || strings.Contains(lower, " or ") {
+			return parseLogical(strings.TrimSpace(s))
+		}
 	}
 	return parseAttribute(strings.TrimSpace(s))
 }
