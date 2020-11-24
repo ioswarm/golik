@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/mux"
 )
 
@@ -13,7 +15,7 @@ type HttpService struct {
 	system   Golik
 	server   *http.Server
 	settings *httpSettings
-	handler CloveHandler
+	handler  CloveHandler
 	Router   *mux.Router
 }
 
@@ -23,10 +25,10 @@ func Http(system Golik) (*HttpService, error) {
 
 func NewHttp(name string, system Golik) (*HttpService, error) {
 	hs := &HttpService{
-		name:   name,
-		system: system,
+		name:     name,
+		system:   system,
 		settings: newHTTPSettings(name),
-		Router: mux.NewRouter(),
+		Router:   mux.NewRouter(),
 	}
 
 	con, err := system.ExecuteService(hs)
@@ -43,7 +45,7 @@ func (hs *HttpService) CreateServiceInstance(system Golik) *Clove {
 	return &Clove{
 		Name: hs.name,
 		Behavior: func(ctx CloveContext, msg Message) {
-			msg.Reply(Done())  // 
+			msg.Reply(Done()) //
 		},
 		PreStart: func(ctx CloveContext) {
 			hs.run(ctx)
@@ -102,7 +104,7 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 	if route.Method != "" {
 		method = route.Method
 	}
-	
+
 	//r := mrouter.NewRoute().Path(route.Path)
 	r := mrouter.NewRoute().Path(route.Path)
 	if len(route.Subroutes) > 0 {
@@ -113,7 +115,7 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 		if err := validateRouteFunc(route.Handle); err != nil {
 			return err
 		}
-		
+
 		r.Methods(method).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := newHttpRouteContext(r.Context(), hs.handler, r)
 			resp := handleRoute(ctx, route.Handle)
@@ -125,8 +127,17 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 			w.WriteHeader(resp.StatusCode)
 
 			if resp.Content != nil {
-				if err := json.NewEncoder(w).Encode(resp.Content); err != nil {
-					ctx.Warn(err.Error())
+				switch resp.Content.(type) {
+				case proto.Message:
+					pm := resp.Content.(proto.Message)
+					m := jsonpb.Marshaler{}
+					if err := m.Marshal(w, pm); err != nil {
+						ctx.Warn(err.Error())
+					}
+				default:
+					if err := json.NewEncoder(w).Encode(resp.Content); err != nil {
+						ctx.Warn(err.Error())
+					}
 				}
 			}
 		})
