@@ -1,16 +1,20 @@
 package golik
 
 import (
-	"strconv"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"reflect"
+	"strconv"
+
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 )
 
 var (
 	ctxType = reflect.TypeOf((*RouteContext)(nil)).Elem()
+	msgType = reflect.TypeOf((*proto.Message)(nil)).Elem()
 )
 
 func validateRouteFunc(f interface{}) error {
@@ -30,14 +34,24 @@ func createInstancePtrOf(t reflect.Type) reflect.Value {
 
 func decodeParam(inType reflect.Type, reader io.Reader) (reflect.Value, error) {
 	inPtrValue := createInstancePtrOf(inType)
-	if err := json.NewDecoder(reader).Decode(inPtrValue.Interface()); err != nil {
-		return reflect.ValueOf(nil), err
+
+	result := inPtrValue.Interface()
+	switch result.(type) {
+	case proto.Message:
+		pmsg := result.(proto.Message)
+		if err := jsonpb.Unmarshal(reader, pmsg); err != nil {
+			return reflect.ValueOf(nil), err
+		}
+	default:
+		if err := json.NewDecoder(reader).Decode(result); err != nil {
+			return reflect.ValueOf(nil), err
+		}
 	}
+
 	if inType.Kind() == reflect.Ptr {
 		return inPtrValue, nil
-	} else {
-		return reflect.Indirect(inPtrValue), nil
 	}
+	return reflect.Indirect(inPtrValue), nil
 }
 
 func handleError(err interface{}) Response {
@@ -46,7 +60,7 @@ func handleError(err interface{}) Response {
 		e := err.(*Error)
 		result := Response{
 			StatusCode: http.StatusInternalServerError,
-			Content: e,
+			Content:    e,
 		}
 		if val, ok := e.Meta["http.status"]; ok {
 			if status, serr := strconv.Atoi(val); serr == nil {
@@ -57,7 +71,7 @@ func handleError(err interface{}) Response {
 	case error:
 		return Response{
 			StatusCode: http.StatusInternalServerError,
-			Content: Errorln(err.(error)),
+			Content:    Errorln(err.(error)),
 		}
 	default:
 		return Response{
@@ -82,7 +96,7 @@ func handleRoute(ctx RouteContext, f interface{}) Response {
 			if err != nil {
 				return Response{
 					StatusCode: http.StatusBadRequest,
-					Content: err,
+					Content:    err,
 				}
 			}
 
@@ -95,7 +109,7 @@ func handleRoute(ctx RouteContext, f interface{}) Response {
 		if err != nil {
 			return Response{
 				StatusCode: http.StatusBadRequest,
-				Content: err,
+				Content:    err,
 			}
 		}
 
@@ -118,7 +132,7 @@ func handleRoute(ctx RouteContext, f interface{}) Response {
 		}
 		return Response{
 			StatusCode: http.StatusOK,
-			Content: results[0].Interface(),
+			Content:    results[0].Interface(),
 		}
 	}
 	if fType.NumOut() == 2 {
@@ -133,7 +147,7 @@ func handleRoute(ctx RouteContext, f interface{}) Response {
 		}
 		return Response{
 			StatusCode: http.StatusOK,
-			Content: results[0].Interface(),
+			Content:    results[0].Interface(),
 		}
 	}
 
