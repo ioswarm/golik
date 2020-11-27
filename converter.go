@@ -48,8 +48,9 @@ func NewConverter() Converter {
 		interpretJson:    true,
 		fieldNameMapping: make(map[string]string),
 		rules: []ConvertRule{
-			TimestampRule(),
 			PtrRule(),
+			TimestampRule(),
+			TimeRule(),
 			StructRule(),
 			SliceRule(),
 			StringKeyMapRule(),

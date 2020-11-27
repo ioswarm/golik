@@ -6,8 +6,8 @@ import (
 	"time"
 
 	//timestamppb "google.golang.org/protobuf/types/known/timestamppb"
-	timestamppb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/golang/protobuf/ptypes"
+	timestamppb "github.com/golang/protobuf/ptypes/timestamp"
 )
 
 var (
@@ -572,7 +572,6 @@ func Float64Rule() ConvertRule {
 	}
 }
 
-
 func TimestampRule() ConvertRule {
 	return &rule{
 		check: func(tpe reflect.Type) bool {
@@ -584,12 +583,16 @@ func TimestampRule() ConvertRule {
 				if err != nil {
 					return nil, err
 				}
-				return time, nil
+				return time.Format("2006-01-02T15:04:05.000-07:00"), nil
 			}
 			return nil, fmt.Errorf("Could not decode %T to timestamppb.Timestamp", value.Interface())
 		},
 		encode: func(conv Converter, i interface{}, value reflect.Value) error {
-			if time, ok := i.(time.Time); ok {
+			if s, ok := i.(string); ok {
+				time, err := time.Parse("2006-01-02T15:04:05.000-07:00", s)
+				if err != nil {
+					return err
+				}
 				ts, err := ptypes.TimestampProto(time)
 				if err != nil {
 					return err
@@ -597,7 +600,32 @@ func TimestampRule() ConvertRule {
 				value.Set(reflect.ValueOf(ts))
 				return nil
 			}
-			return fmt.Errorf("Could not encode %T to float64", i)
+			return fmt.Errorf("Could not encode %T to timestamppb.Timestamp", i)
+		},
+	}
+}
+
+func TimeRule() ConvertRule {
+	return &rule{
+		check: func(tpe reflect.Type) bool {
+			return tpe == timeType
+		},
+		decode: func(conv Converter, value reflect.Value) (interface{}, error) {
+			if time, ok := value.Interface().(time.Time); ok {
+				return time.Format("2006-01-02T15:04:05.000-07:00"), nil
+			}
+			return nil, fmt.Errorf("Could not decode %T to time.Time", value.Interface())
+		},
+		encode: func(conv Converter, i interface{}, value reflect.Value) error {
+			if s, ok := i.(string); ok {
+				time, err := time.Parse("2006-01-02T15:04:05.000-07:00", s)
+				if err != nil {
+					return err
+				}
+				value.Set(reflect.ValueOf(time))
+				return nil
+			}
+			return fmt.Errorf("Could not encode %T to time.Time", i)
 		},
 	}
 }
