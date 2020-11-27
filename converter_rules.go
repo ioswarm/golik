@@ -3,6 +3,16 @@ package golik
 import (
 	"fmt"
 	"reflect"
+	"time"
+
+	//timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	timestamppb "github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/golang/protobuf/ptypes"
+)
+
+var (
+	timeType      = reflect.TypeOf((*time.Time)(nil)).Elem()
+	timestampType = reflect.TypeOf((*timestamppb.Timestamp)(nil)).Elem()
 )
 
 type rule struct {
@@ -558,6 +568,36 @@ func Float64Rule() ConvertRule {
 			default:
 				return fmt.Errorf("Could not encode %T to float64", i)
 			}
+		},
+	}
+}
+
+
+func TimestampRule() ConvertRule {
+	return &rule{
+		check: func(tpe reflect.Type) bool {
+			return tpe == timestampType
+		},
+		decode: func(conv Converter, value reflect.Value) (interface{}, error) {
+			if ts, ok := value.Interface().(timestamppb.Timestamp); ok {
+				time, err := ptypes.Timestamp(&ts)
+				if err != nil {
+					return nil, err
+				}
+				return time, nil
+			}
+			return nil, fmt.Errorf("Could not decode %T to timestamppb.Timestamp", value.Interface())
+		},
+		encode: func(conv Converter, i interface{}, value reflect.Value) error {
+			if time, ok := i.(time.Time); ok {
+				ts, err := ptypes.TimestampProto(time)
+				if err != nil {
+					return err
+				}
+				value.Set(reflect.ValueOf(ts))
+				return nil
+			}
+			return fmt.Errorf("Could not encode %T to float64", i)
 		},
 	}
 }
