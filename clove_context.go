@@ -12,6 +12,8 @@ type CloveContext interface {
 
 	AddOption(string, interface{}) 
 	Option(string) (interface{}, bool)
+
+	
 }
 
 type cloveContext struct {

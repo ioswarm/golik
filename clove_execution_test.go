@@ -1,7 +1,6 @@
 package golik
 
 import (
-	"context"
 	"testing"
 )
 
@@ -36,22 +35,6 @@ var (
 		return nil, nil
 	}
 
-	behaviorI = func(ctx context.Context, i interface{}) {}
-	behaviorJ = func(ctx context.Context, i interface{}) error {
-		return nil
-	}
-	behaviorK = func(ctx context.Context, i interface{}) interface{} {
-		return i
-	}
-	behaviorL = func(ctx context.Context, i interface{}) (interface{}, error) {
-		switch i.(type) {
-		case error:
-			return nil, i.(error)
-		default:
-			return i, nil
-		}
-	}
-
 	behaviorM = TestBehavior{}
 
 	behaviorN = &behaviorM
@@ -63,24 +46,40 @@ var (
 
 	behaviorErrB = func() {}
 
-	behaviorErrC = func(ctx context.Context, i interface{}, j interface{}) interface{} {
+	behaviorErrC = func(ctx CloveContext, i interface{}, j interface{}) interface{} {
 		return i
 	}
 
 	behaviorErrD = 28
 	behaviorErrE = &behaviorErrD
 
-	behaviorValid = []interface{}{behaviorA, behaviorB, behaviorC, behaviorD, behaviorE, behaviorF, behaviorG, behaviorH, behaviorI, behaviorJ, behaviorK, behaviorL, behaviorM, behaviorN}
+	behaviorErrF = func(ctx CloveContext, i interface{}) {}
+	behaviorErrG = func(ctx CloveContext, i interface{}) error {
+		return nil
+	}
+	behaviorErrH = func(ctx CloveContext, i interface{}) interface{} {
+		return i
+	}
+	behaviorErrI = func(ctx CloveContext, i interface{}) (interface{}, error) {
+		switch i.(type) {
+		case error:
+			return nil, i.(error)
+		default:
+			return i, nil
+		}
+	}
+
+	behaviorValid = []interface{}{behaviorA, behaviorB, behaviorC, behaviorD, behaviorE, behaviorF, behaviorG, behaviorH, behaviorM, behaviorN}
 	behaviorNotValid = []interface{}{behaviorErrA, behaviorErrB, behaviorErrC, behaviorErrD, behaviorErrE}
 
 
 	lifecycleA = func() {}
 	lifecycleB = func() error { return nil }
-	lifecycleC = func(ctx context.Context) {}
-	lifecycleD = func(ctx context.Context) error { return nil }
+	lifecycleC = func(ctx CloveContext) {}
+	lifecycleD = func(ctx CloveContext) error { return nil }
 
 	lifecycleValid = []interface{}{lifecycleA, lifecycleB, lifecycleC, lifecycleD}
-	lifecycleNotValid = []interface{}{behaviorA, behaviorB, behaviorC, behaviorD, behaviorI, behaviorJ, behaviorK, behaviorL, behaviorM, behaviorN}
+	lifecycleNotValid = []interface{}{behaviorA, behaviorB, behaviorC, behaviorD, behaviorErrF, behaviorErrG, behaviorErrH, behaviorErrI, behaviorM, behaviorN}
 )
 
 func TestCheckBehavior(t *testing.T) {

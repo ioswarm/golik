@@ -50,7 +50,6 @@ func NewConverter() Converter {
 		rules: []ConvertRule{
 			PtrRule(),
 			TimestampRule(),
-			TimeRule(),
 			StructRule(),
 			SliceRule(),
 			StringKeyMapRule(),

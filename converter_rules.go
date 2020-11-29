@@ -56,6 +56,11 @@ func (*ptrRule) Encode(conv Converter, i interface{}, value reflect.Value) error
 		return nil
 	}
 	evalue := value.Elem()
+	if value.IsNil() {
+		ptr := reflect.New(value.Type().Elem())
+		value.Set(ptr) 
+		evalue = ptr.Elem()
+	}
 	etype := value.Type().Elem()
 	for _, rule := range conv.Rules() {
 		if rule.Check(etype) {
@@ -583,16 +588,12 @@ func TimestampRule() ConvertRule {
 				if err != nil {
 					return nil, err
 				}
-				return time.Format("2006-01-02T15:04:05.000-07:00"), nil
+				return time, nil
 			}
 			return nil, fmt.Errorf("Could not decode %T to timestamppb.Timestamp", value.Interface())
 		},
 		encode: func(conv Converter, i interface{}, value reflect.Value) error {
-			if s, ok := i.(string); ok {
-				time, err := time.Parse("2006-01-02T15:04:05.000-07:00", s)
-				if err != nil {
-					return err
-				}
+			if time, ok := i.(time.Time); ok {
 				ts, err := ptypes.TimestampProto(time)
 				if err != nil {
 					return err
@@ -605,7 +606,7 @@ func TimestampRule() ConvertRule {
 	}
 }
 
-func TimeRule() ConvertRule {
+func TimeToStringRule() ConvertRule {
 	return &rule{
 		check: func(tpe reflect.Type) bool {
 			return tpe == timeType

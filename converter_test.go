@@ -3,12 +3,14 @@ package golik
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
+	timestamppb "github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/golang/protobuf/ptypes"
 )
 
 type ComplexTypeA struct {
 	Id string
 	StringValue string
-	Struct ComplexTypeB
+	Struct *ComplexTypeB
 	SliceNative []int
 	SliceStruct []ComplexTypeB
 	SlicePtr []*ComplexTypeB
@@ -22,10 +24,10 @@ func newComplexTypeA() *ComplexTypeA {
 		Struct: newComplexTypeB(),
 		SliceNative: []int{2, 4, 6, 8, 10},
 		SliceStruct: []ComplexTypeB{
-			{1.234, 4.321, 20200920, 16},
+			{1.234, 4.321, 20200920, 16, newComplexTypeC(), ptypes.TimestampNow()},
 		},
 		SlicePtr: []*ComplexTypeB{
-			{1.234, 4.321, 20200920, 16},
+			{1.234, 4.321, 20200920, 16, newComplexTypeC(), ptypes.TimestampNow()},
 		},
 		SimpleMap: map[int]string{
 			1: "one",
@@ -40,14 +42,31 @@ type ComplexTypeB struct {
 	Float64Value float64
 	IntValue int
 	Int8Value int8
+	Struct ComplexTypeC
+	Time *timestamppb.Timestamp
 }
 
-func newComplexTypeB() ComplexTypeB {
-	return ComplexTypeB{
+func newComplexTypeB() *ComplexTypeB {
+	return &ComplexTypeB{
 		Float32Value: 3.1415,
 		Float64Value: 123424.32483,
 		Int8Value: 16,
 		IntValue: 20200920,
+		Struct: newComplexTypeC(),
+		Time: ptypes.TimestampNow(),
+	}
+}
+
+type ComplexTypeC struct {
+	StringValue string
+	BooleanValue bool
+	
+}
+
+func newComplexTypeC() ComplexTypeC {
+	return ComplexTypeC{
+		StringValue: "This is a string in ComplexTypeC",
+		BooleanValue: true,
 	}
 }
 
