@@ -58,7 +58,7 @@ func (*ptrRule) Encode(conv Converter, i interface{}, value reflect.Value) error
 	evalue := value.Elem()
 	if value.IsNil() {
 		ptr := reflect.New(value.Type().Elem())
-		value.Set(ptr) 
+		value.Set(ptr)
 		evalue = ptr.Elem()
 	}
 	etype := value.Type().Elem()
@@ -550,6 +550,10 @@ func Float32Rule() ConvertRule {
 			case float32:
 				value.Set(reflect.ValueOf(i))
 				return nil
+			case float64:
+				f := i.(float64)
+				value.Set(reflect.ValueOf(float32(f)))
+				return nil
 			default:
 				return fmt.Errorf("Could not encode %T to float32", i)
 			}
@@ -567,6 +571,10 @@ func Float64Rule() ConvertRule {
 		},
 		encode: func(conv Converter, i interface{}, value reflect.Value) error {
 			switch i.(type) {
+			case float32:
+				f := i.(float32)
+				value.Set(reflect.ValueOf(float64(f)))
+				return nil
 			case float64:
 				value.Set(reflect.ValueOf(i))
 				return nil
