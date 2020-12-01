@@ -17,20 +17,22 @@ var (
 func parseString(s string) interface{} {
 	smatch := dateTimeRegex.FindStringSubmatch(s)
 	for i, name := range dateTimeRegex.SubexpNames() {
-		sm := smatch[i]
-		if i != 0 && name != "" && sm != "" {
-			switch name {
-			case "dateTimeFull":
-				if t, err := time.Parse("2006-01-02T15:04:05.000-07:00", s); err == nil {
-					return t
-				}
-			case "dateTime":
-				if t, err := time.Parse("2006-01-02 15:04:05.000", s); err == nil {
-					return t
-				}
-			case "date":
-				if t, err := time.Parse("2006-01-02", s); err == nil {
-					return t
+		if i < len(smatch) {
+			sm := smatch[i]
+			if i != 0 && name != "" && sm != "" {
+				switch name {
+				case "dateTimeFull":
+					if t, err := time.Parse("2006-01-02T15:04:05.000-07:00", s); err == nil {
+						return t
+					}
+				case "dateTime":
+					if t, err := time.Parse("2006-01-02 15:04:05.000", s); err == nil {
+						return t
+					}
+				case "date":
+					if t, err := time.Parse("2006-01-02", s); err == nil {
+						return t
+					}
 				}
 			}
 		}
