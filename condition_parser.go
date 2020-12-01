@@ -5,12 +5,38 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
-	attrRegex  = regexp.MustCompile(`(?P<attribute>.*)\s+(?P<operator>[a-zA-Z]{2})\s+(?P<value>.*)`) // TODO no whitespaces in attribute
-	valueRegex = regexp.MustCompile(`(?P<float>[+-]?[0-9]+\.[0-9]+)|(?P<int>[+-]?[0-9]+)|(?P<bool>true|false)|(?:['"](?P<string>.*)['"])`)
+	attrRegex     = regexp.MustCompile(`(?P<attribute>.*)\s+(?P<operator>[a-zA-Z]{2})\s+(?P<value>.*)`) // TODO no whitespaces in attribute
+	valueRegex    = regexp.MustCompile(`(?P<float>[+-]?[0-9]+\.[0-9]+)|(?P<int>[+-]?[0-9]+)|(?P<bool>true|false)|(?:['"](?P<string>.*)['"])`)
+	dateTimeRegex = regexp.MustCompile(`(?P<dateTimeFull>\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d{3}[+-]\d{2}:\d{2})|(?P<dateTime>\d{4}-[01]\d-[0-3]\d\s[0-2]\d:[0-5]\d:[0-5]\d\.\d{1,3})|(?P<date>\d{4}-[01]\d-[0-3]\d)`)
 )
+
+func parseString(s string) interface{} {
+	smatch := dateTimeRegex.FindStringSubmatch(s)
+	for i, name := range dateTimeRegex.SubexpNames() {
+		sm := smatch[i]
+		if i != 0 && name != "" && sm != "" {
+			switch name {
+			case "dateTimeFull":
+				if t, err := time.Parse("2006-01-02T15:04:05.000-07:00", s); err == nil {
+					return t
+				}
+			case "dateTime":
+				if t, err := time.Parse("2006-01-02 15:04:05.000", s); err == nil {
+					return t
+				}
+			case "date":
+				if t, err := time.Parse("2006-01-02", s); err == nil {
+					return t
+				}
+			}
+		}
+	}
+	return s
+}
 
 func parseValue(s string) (interface{}, error) {
 	vmatch := valueRegex.FindStringSubmatch(s)
@@ -25,7 +51,7 @@ func parseValue(s string) (interface{}, error) {
 			case "int":
 				return strconv.Atoi(vm)
 			case "string":
-				return vm, nil
+				return parseString(vm), nil
 			}
 		}
 	}
@@ -87,7 +113,7 @@ func parseGroup(s string) (Condition, error) {
 		return nil, err
 	}
 	var result Condition = Group(cond)
-	
+
 	if idx+1 < len(s) {
 		subcond, suberr := Parse(strings.TrimSpace(s[idx+1:]))
 		if suberr != nil {
@@ -109,7 +135,7 @@ func parseGroup(s string) (Condition, error) {
 func parseLogicalRight(s string) (Condition, error) {
 	lower := strings.ToLower(s)
 
-	cond, err := Parse(s[(strings.Index(s, " ")+1):])
+	cond, err := Parse(s[(strings.Index(s, " ") + 1):])
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +161,7 @@ func parseLogical(s string) (Condition, error) {
 	if idx == 0 {
 		return parseLogicalRight(s)
 	}
-	left, lerr := Parse(s[:idx-1]) 
+	left, lerr := Parse(s[:idx-1])
 	if lerr != nil {
 		return nil, lerr
 	}
@@ -144,9 +170,9 @@ func parseLogical(s string) (Condition, error) {
 		return nil, rerr
 	}
 	return &compoundCondition{
-		left: left,
+		left:    left,
 		logical: op,
-		right: right,
+		right:   right,
 	}, nil
 }
 
@@ -160,10 +186,10 @@ func parseNot(s string) (Condition, error) {
 
 func Parse(s string) (Condition, error) {
 	lower := strings.ToLower(strings.TrimSpace(s))
-	if (strings.HasPrefix(lower, "not")) {
+	if strings.HasPrefix(lower, "not") {
 		return parseNot(strings.TrimSpace(s))
 	}
-	if (strings.HasPrefix(lower, "(")) {
+	if strings.HasPrefix(lower, "(") {
 		return parseGroup(strings.TrimSpace(s))
 	}
 	if strings.Contains(lower, "and ") || strings.Contains(lower, " and") || strings.Contains(lower, "or ") || strings.Contains(lower, " or") {
