@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -124,6 +125,12 @@ func AttributeCondition(name string, op Operator, value interface{}) Operand {
 			attribute: name,
 			operator:  op,
 			value:     value.(float64),
+		}
+	case time.Time:
+		return &timeCondition{
+			attribute: name,
+			operator:  op,
+			value:     value.(time.Time),
 		}
 	default:
 		//return nil, fmt.Errorf("Unsupportet datatype %T", value)
@@ -486,6 +493,66 @@ func (c *float64Condition) Operator() Operator {
 }
 
 func (c *float64Condition) Value() interface{} {
+	return c.value
+}
+
+type timeCondition struct {
+	attribute string
+	operator  Operator
+	value     time.Time
+}
+
+func (c *timeCondition) Command() string {
+	return fmt.Sprintf("%v %v %v", c.attribute, c.operator, c.value.Format("2006-01-02 15:04:05.000"))
+}
+
+func (c *timeCondition) Check(obj interface{}) bool { 
+	v := c.value
+	if cv, ok := obj.(time.Time); ok {
+		switch c.operator {
+		case EQ:
+			return v.Unix() == cv.Unix()
+		case NE:
+			return v.Unix() != cv.Unix()
+		case CO:
+			return false
+		case SW:
+			return false
+		case EW:
+			return false
+		case PR:
+			return true
+		case GT:
+			return v.Unix() > cv.Unix()
+		case GE:
+			return v.Unix() >= cv.Unix()
+		case LT:
+			return v.Unix() < cv.Unix()
+		case LE:
+			return v.Unix() >= cv.Unix()
+		}
+	}		
+
+	return false
+}
+
+func (c *timeCondition) AND(right Condition) Logic {
+	return And(c, right)
+}
+
+func (c *timeCondition) OR(right Condition) Logic {
+	return Or(c, right)
+}
+
+func (c *timeCondition) Attribute() string {
+	return c.attribute
+}
+
+func (c *timeCondition) Operator() Operator {
+	return c.operator
+}
+
+func (c *timeCondition) Value() interface{} {
 	return c.value
 }
 
