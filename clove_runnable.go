@@ -246,6 +246,11 @@ func (cr *cloveRunnable) at(path string) (*cloveRunnable, bool) {
 				return cr.root(), true
 			}
 			return cr.root().at(path[1:])
+		} else if len(path) >= 2 && path[0:2] == ".." && cr.parent != nil {
+			if len(path) == 2 || path == "../" {
+				return cr.parent, true
+			}
+			return cr.parent.at(path[3:])
 		} else if path[0] == '.' || strings.HasPrefix(path, cr.clove.Name) {
 			if i := strings.IndexRune(path, '/'); i > -1 {
 				if i < len(path)-1 {
@@ -254,11 +259,6 @@ func (cr *cloveRunnable) at(path string) (*cloveRunnable, bool) {
 			} else {
 				return cr, true
 			}
-		} else if len(path) >= 2 && path[0:2] == ".." && cr.parent != nil {
-			if len(path) == 2 || path == "../" {
-				return cr.parent, true
-			}
-			return cr.parent.at(path[3:])
 		} else {
 			if i := strings.IndexRune(path, '/'); i != -1 {
 				child, ok := cr.child(path[:i])
@@ -273,7 +273,6 @@ func (cr *cloveRunnable) at(path string) (*cloveRunnable, bool) {
 			return cr.child(path)
 		}
 	}
-
 	return nil, false
 }
 
