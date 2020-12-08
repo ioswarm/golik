@@ -121,7 +121,7 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 			ctx := newHttpRouteContext(r.Context(), hs.handler, r)
 			resp := handleRoute(ctx, route.Handle)
 
-			w.Header().Set("Content-Type", "application/json; utf-8")
+			//w.Header().Set("Content-Type", "application/json; utf-8")
 			for key := range resp.Header {
 				w.Header().Set(key, resp.Header.Get(key))
 			}
@@ -129,12 +129,17 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 			if resp.Content != nil {
 				switch resp.Content.(type) {
 				case []byte:
-					w.Header().Set("Content-Type", "application/octet-stream")
+					if w.Header().Get("Content-Type") == "" {
+						w.Header().Set("Content-Type", "application/octet-stream")
+					}
 					w.WriteHeader(resp.StatusCode)
 
 					buf := resp.Content.([]byte)
 					w.Write(buf)
 				case []proto.Message:
+					if w.Header().Get("Content-Type") == "" {
+						w.Header().Set("Content-Type", "application/json; utf-8")
+					}
 					w.WriteHeader(resp.StatusCode)
 
 					ps := resp.Content.([]proto.Message)
@@ -151,6 +156,9 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 					result := "[" + strings.Join(slist, ",") + "]"
 					w.Write([]byte(result))
 				case proto.Message:
+					if w.Header().Get("Content-Type") == "" {
+						w.Header().Set("Content-Type", "application/json; utf-8")
+					}
 					w.WriteHeader(resp.StatusCode)
 
 					pm := resp.Content.(proto.Message)
@@ -159,6 +167,9 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 						ctx.Warn(err.Error())
 					}
 				default:
+					if w.Header().Get("Content-Type") == "" {
+						w.Header().Set("Content-Type", "application/json; utf-8")
+					}
 					w.WriteHeader(resp.StatusCode)
 
 					if err := json.NewEncoder(w).Encode(resp.Content); err != nil {
