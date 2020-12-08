@@ -121,14 +121,18 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 			ctx := newHttpRouteContext(r.Context(), hs.handler, r)
 			resp := handleRoute(ctx, route.Handle)
 
+			w.Header().Add("Content-Type", "application/json; utf-8")
 			for key := range resp.Header {
 				w.Header().Add(key, resp.Header.Get(key))
 			}
-			w.Header().Add("Content-Type", "application/json; utf-8")
 			w.WriteHeader(resp.StatusCode)
 
 			if resp.Content != nil {
 				switch resp.Content.(type) {
+				case []byte:
+					w.Header().Add("Content-Type", "application/actet-stream")
+					buf := resp.Content.([]byte)
+					w.Write(buf)
 				case []proto.Message:
 					ps := resp.Content.([]proto.Message)
 					m := jsonpb.Marshaler{}
@@ -136,7 +140,7 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 					for _, msg := range ps {
 						s, err := m.MarshalToString(msg)
 						if err != nil {
-							ctx.Warn(err.Error())	
+							ctx.Warn(err.Error())
 							continue
 						}
 						slist = append(slist, s)
