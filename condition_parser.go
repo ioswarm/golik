@@ -22,15 +22,15 @@ func parseString(s string) interface{} {
 			if i != 0 && name != "" && sm != "" {
 				switch name {
 				case "dateTimeFull":
-					if t, err := time.Parse("2006-01-02T15:04:05.000-07:00", s); err == nil {
+					if t, err := time.Parse("2006-01-02T15:04:05.000-07:00", sm); err == nil {
 						return t
 					}
 				case "dateTime":
-					if t, err := time.Parse("2006-01-02 15:04:05.000", s); err == nil {
+					if t, err := time.Parse("2006-01-02 15:04:05.000", sm); err == nil {
 						return t
 					}
 				case "date":
-					if t, err := time.Parse("2006-01-02", s); err == nil {
+					if t, err := time.Parse("2006-01-02", sm); err == nil {
 						return t
 					}
 				}
