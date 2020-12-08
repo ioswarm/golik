@@ -129,7 +129,7 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 			if resp.Content != nil {
 				switch resp.Content.(type) {
 				case []byte:
-					w.Header().Set("Content-Type", "application/actet-stream")
+					w.Header().Set("Content-Type", "application/octet-stream")
 					w.WriteHeader(resp.StatusCode)
 
 					buf := resp.Content.([]byte)
