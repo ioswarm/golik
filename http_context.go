@@ -8,7 +8,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func newHttpRouteContext(context context.Context, handler CloveHandler, request *http.Request) *httpRouteContext {
+type HttpRouteContext interface {
+	RouteContext
+	Request() *http.Request
+}
+
+func newHttpRouteContext(context context.Context, handler CloveHandler, request *http.Request) HttpRouteContext {
 	return &httpRouteContext{context, handler, request}
 }
 
@@ -16,6 +21,10 @@ type httpRouteContext struct {
 	context.Context
 	handler CloveHandler
 	request *http.Request
+}
+
+func (ctx *httpRouteContext) Request() *http.Request {
+	return ctx.request
 }
 
 func (ctx *httpRouteContext) Handler() CloveHandler {
