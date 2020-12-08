@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -128,6 +129,20 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 
 			if resp.Content != nil {
 				switch resp.Content.(type) {
+				case []proto.Message:
+					ps := resp.Content.([]proto.Message)
+					m := jsonpb.Marshaler{}
+					slist := make([]string, 0)
+					for _, msg := range ps {
+						s, err := m.MarshalToString(msg)
+						if err != nil {
+							ctx.Warn(err.Error())	
+							continue
+						}
+						slist = append(slist, s)
+					}
+					result := "[" + strings.Join(slist, ",") + "]"
+					w.Write([]byte(result))
 				case proto.Message:
 					pm := resp.Content.(proto.Message)
 					m := jsonpb.Marshaler{}
