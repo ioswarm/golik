@@ -552,27 +552,27 @@ func Float32Rule() ConvertRule {
 				return nil
 			case float64:
 				f := i.(float64)
-				value.Set(reflect.ValueOf(float64(f)))
+				value.Set(reflect.ValueOf(float32(f)))
 				return nil
 			case int:
 				ix := i.(int)
-				value.Set(reflect.ValueOf(float64(ix)))
+				value.Set(reflect.ValueOf(float32(ix)))
 				return nil
 			case int8:
 				ix := i.(int8)
-				value.Set(reflect.ValueOf(float64(ix)))
+				value.Set(reflect.ValueOf(float32(ix)))
 				return nil
 			case int16:
 				ix := i.(int16)
-				value.Set(reflect.ValueOf(float64(ix)))
+				value.Set(reflect.ValueOf(float32(ix)))
 				return nil
 			case int32:
 				ix := i.(int32)
-				value.Set(reflect.ValueOf(float64(ix)))
+				value.Set(reflect.ValueOf(float32(ix)))
 				return nil
 			case int64:
 				ix := i.(int64)
-				value.Set(reflect.ValueOf(float64(ix)))
+				value.Set(reflect.ValueOf(float32(ix)))
 				return nil
 			default:
 				return fmt.Errorf("Could not encode %T to float32", i)
@@ -600,23 +600,23 @@ func Float64Rule() ConvertRule {
 				return nil
 			case int:
 				ix := i.(int)
-				value.Set(reflect.ValueOf(float32(ix)))
+				value.Set(reflect.ValueOf(float64(ix)))
 				return nil
 			case int8:
 				ix := i.(int8)
-				value.Set(reflect.ValueOf(float32(ix)))
+				value.Set(reflect.ValueOf(float64(ix)))
 				return nil
 			case int16:
 				ix := i.(int16)
-				value.Set(reflect.ValueOf(float32(ix)))
+				value.Set(reflect.ValueOf(float64(ix)))
 				return nil
 			case int32:
 				ix := i.(int32)
-				value.Set(reflect.ValueOf(float32(ix)))
+				value.Set(reflect.ValueOf(float64(ix)))
 				return nil
 			case int64:
 				ix := i.(int64)
-				value.Set(reflect.ValueOf(float32(ix)))
+				value.Set(reflect.ValueOf(float64(ix)))
 				return nil
 			default:
 				return fmt.Errorf("Could not encode %T to float64", i)
