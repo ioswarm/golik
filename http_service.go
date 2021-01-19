@@ -2,12 +2,8 @@ package golik
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
-	"strings"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/mux"
 )
 
@@ -121,62 +117,11 @@ func (hs *HttpService) handleRoute(mrouter *mux.Router, route Route) error {
 			ctx := newHttpRouteContext(r.Context(), hs.handler, r)
 			resp := handleRoute(ctx, route.Handle)
 
-			//w.Header().Set("Content-Type", "application/json; utf-8")
-			for key := range resp.Header {
-				w.Header().Set(key, resp.Header.Get(key))
+			if resp.Writer != nil {
+				resp.Writer(ctx, w, &resp)
+				return
 			}
-
-			if resp.Content != nil {
-				switch resp.Content.(type) {
-				case []byte:
-					if w.Header().Get("Content-Type") == "" {
-						w.Header().Set("Content-Type", "application/octet-stream")
-					}
-					w.WriteHeader(resp.StatusCode)
-
-					buf := resp.Content.([]byte)
-					w.Write(buf)
-				case []proto.Message:
-					if w.Header().Get("Content-Type") == "" {
-						w.Header().Set("Content-Type", "application/json; utf-8")
-					}
-					w.WriteHeader(resp.StatusCode)
-
-					ps := resp.Content.([]proto.Message)
-					m := jsonpb.Marshaler{}
-					slist := make([]string, 0)
-					for _, msg := range ps {
-						s, err := m.MarshalToString(msg)
-						if err != nil {
-							ctx.Warn(err.Error())
-							continue
-						}
-						slist = append(slist, s)
-					}
-					result := "[" + strings.Join(slist, ",") + "]"
-					w.Write([]byte(result))
-				case proto.Message:
-					if w.Header().Get("Content-Type") == "" {
-						w.Header().Set("Content-Type", "application/json; utf-8")
-					}
-					w.WriteHeader(resp.StatusCode)
-
-					pm := resp.Content.(proto.Message)
-					m := jsonpb.Marshaler{}
-					if err := m.Marshal(w, pm); err != nil {
-						ctx.Warn(err.Error())
-					}
-				default:
-					if w.Header().Get("Content-Type") == "" {
-						w.Header().Set("Content-Type", "application/json; utf-8")
-					}
-					w.WriteHeader(resp.StatusCode)
-
-					if err := json.NewEncoder(w).Encode(resp.Content); err != nil {
-						ctx.Warn(err.Error())
-					}
-				}
-			}
+			defaultResponseWriter(ctx, w, &resp)
 		})
 	}
 
