@@ -150,8 +150,8 @@ func parseLogicalRight(s string) (Condition, error) {
 
 func parseLogical(s string) (Condition, error) {
 	lower := strings.ToLower(s)
-	idx := strings.Index(lower, "and")
-	oridx := strings.Index(lower, "or")
+	idx := strings.Index(lower, " and ")
+	oridx := strings.Index(lower, " or ")
 	op := AND
 	if idx < 0 && oridx < 0 {
 		return nil, fmt.Errorf("Need AND/OR operator in %v", s)
@@ -194,8 +194,9 @@ func Parse(s string) (Condition, error) {
 	if strings.HasPrefix(lower, "(") {
 		return parseGroup(strings.TrimSpace(s))
 	}
-	if strings.Contains(lower, "and ") || strings.Contains(lower, " and") || strings.Contains(lower, "or ") || strings.Contains(lower, " or") {
-		if strings.HasPrefix(lower, "and") || strings.HasPrefix(lower, "or") {
+	//if strings.Contains(lower, "and ") || strings.Contains(lower, " and") || strings.Contains(lower, "or ") || strings.Contains(lower, " or") {
+	if strings.Contains(lower, "and ") || strings.Contains(lower, " and ") || strings.Contains(lower, "or ") || strings.Contains(lower, " or ") {
+		if strings.HasPrefix(lower, "and ") || strings.HasPrefix(lower, "or ") {
 			return parseLogicalRight(strings.TrimSpace(s))
 		}
 		if strings.Contains(lower, " and ") || strings.Contains(lower, " or ") {
